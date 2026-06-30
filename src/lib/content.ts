@@ -1,7 +1,8 @@
 /**
- * Site content / sample data for NurvexThink.
- * Plain, serializable data consumed by Server Components. Icons are referenced by
- * string key and mapped to lucide components where rendered.
+ * Static marketing content for NurvexThink (services, stats, process, values,
+ * team, FAQ). Products and blog posts are NOT here — they're stored in Supabase
+ * and fetched via src/lib/queries.ts. The Product and BlogPost types below are
+ * the view-model shapes those queries return.
  */
 
 export const siteConfig = {
@@ -70,6 +71,7 @@ export const services: Service[] = [
   },
 ];
 
+// Products live in the `products` table; fetched via getProducts/getProductBySlug.
 export type Product = {
   slug: string;
   name: string;
@@ -81,80 +83,6 @@ export type Product = {
   year: string;
   liveUrl: string;
 };
-export const products: Product[] = [
-  {
-    slug: "fluxboard",
-    name: "FluxBoard",
-    category: "Productivity",
-    summary: "A keyboard-first project board that turns standups into shipped work.",
-    description:
-      "FluxBoard is a fast, keyboard-driven board for small teams. Plan, assign, and move work without lifting your hands off the keys — with realtime sync so everyone sees the same board.",
-    status: "Live",
-    tags: ["Next.js", "Realtime", "Postgres"],
-    year: "2026",
-    liveUrl: "#",
-  },
-  {
-    slug: "pulse",
-    name: "Pulse",
-    category: "Analytics",
-    summary: "Product analytics that answer one question: what did people actually do?",
-    description:
-      "Pulse is privacy-first product analytics. Track the events that matter, build funnels in seconds, and get a weekly digest of what changed — no cookie banners, no bloat.",
-    status: "Live",
-    tags: ["Analytics", "Edge", "Charts"],
-    year: "2026",
-    liveUrl: "#",
-  },
-  {
-    slug: "ledger",
-    name: "Ledger",
-    category: "Finance",
-    summary: "Invoicing for people who would rather be building than billing.",
-    description:
-      "Ledger turns a project into a paid invoice in two clicks. Recurring billing, reminders, and clean exports your accountant will actually thank you for.",
-    status: "Beta",
-    tags: ["Payments", "PDF", "Stripe"],
-    year: "2026",
-    liveUrl: "#",
-  },
-  {
-    slug: "draft",
-    name: "Draft",
-    category: "AI",
-    summary: "An AI writing desk that drafts with your voice, not a robot's.",
-    description:
-      "Draft learns how you write and helps you go from blank page to finished piece — outlines, rewrites, and tone control, with you always in the driver's seat.",
-    status: "Beta",
-    tags: ["AI", "Editor", "Streaming"],
-    year: "2026",
-    liveUrl: "#",
-  },
-  {
-    slug: "shipgate",
-    name: "ShipGate",
-    category: "Developer tools",
-    summary: "Preview every change before it ships — a link for every pull request.",
-    description:
-      "ShipGate spins up a live preview for every branch, runs your checks, and posts the link back to the PR so reviewers see the real thing, not a screenshot.",
-    status: "Live",
-    tags: ["CI/CD", "Previews", "DX"],
-    year: "2026",
-    liveUrl: "#",
-  },
-  {
-    slug: "vault",
-    name: "Vault",
-    category: "Security",
-    summary: "Encrypted documents you can share without holding your breath.",
-    description:
-      "Vault keeps sensitive documents end-to-end encrypted, with expiring links, access logs, and zero plaintext on our servers. Share confidently, revoke instantly.",
-    status: "Soon",
-    tags: ["E2E", "Storage", "Audit"],
-    year: "2026",
-    liveUrl: "#",
-  },
-];
 
 export type ProcessStep = { step: string; title: string; description: string };
 export const processSteps: ProcessStep[] = [
@@ -178,6 +106,7 @@ export const processSteps: ProcessStep[] = [
   },
 ];
 
+// Blog posts live in the `blog_posts` table; fetched via getPosts/getPostBySlug.
 export type BlogPost = {
   slug: string;
   title: string;
@@ -188,68 +117,6 @@ export type BlogPost = {
   author: string;
   content: string[];
 };
-export const blogPosts: BlogPost[] = [
-  {
-    slug: "why-we-publish-our-own-software",
-    title: "Why we publish our own software",
-    excerpt:
-      "Building products we run ourselves keeps us honest. Here's how shipping our own tools makes the client work better.",
-    category: "Studio",
-    date: "2026-06-18",
-    readingTime: "4 min",
-    author: "Fatima Abdul Raheem",
-    content: [
-      "Every studio says it cares about quality. Running our own products is how we prove it to ourselves. When we depend on the same tools we sell, we feel every slow load, every confusing screen, every surprise bill — and we fix them before a client ever would.",
-      "Publishing our software also keeps our skills honest. There's nowhere to hide when real users show up: the database has to hold, the deploy has to work, the design has to make sense without a sales call. That pressure is the best teacher we've found.",
-      "So the catalog isn't a side project. It's our research lab, our portfolio, and our promise — the clearest way to show what we'd build for you by showing what we've already built for ourselves.",
-    ],
-  },
-  {
-    slug: "a-preview-link-from-day-one",
-    title: "A preview link from day one",
-    excerpt:
-      "The single practice that removes the most risk from a software project: making the work visible before it's done.",
-    category: "Engineering",
-    date: "2026-06-05",
-    readingTime: "6 min",
-    author: "Muhammad Ali",
-    content: [
-      "The riskiest moment in any software project is the big reveal — weeks of work shown for the first time at the end, when changing direction is expensive. We remove that risk with one habit: a live preview link from the first day.",
-      "From day one, every change is deployed somewhere you can click. You don't read a status report; you use the product as it grows. Misunderstandings surface in hours, not at launch, and feedback lands while it's still cheap to act on.",
-      "It sounds simple, and it is — but it changes the whole relationship. The work stops being a black box and becomes a shared, visible thing. That trust is worth more than any amount of documentation.",
-    ],
-  },
-  {
-    slug: "dark-mode-is-a-feature-not-a-toggle",
-    title: "Dark mode is a feature, not a toggle",
-    excerpt:
-      "Designing for both themes from the start changes how you pick color. A short tour of the system behind this very site.",
-    category: "Design",
-    date: "2026-05-22",
-    readingTime: "5 min",
-    author: "Fatima Abdul Raheem",
-    content: [
-      "Dark mode bolted on at the end always looks bolted on. Colors that were picked for a white page turn muddy on black, contrast breaks, and the toggle becomes a compromise instead of a choice.",
-      'We design both themes from the start using semantic tokens — background, foreground, muted, primary — instead of hard-coded colors. Components ask for "the foreground color," and the theme decides what that means. Switching themes is then just swapping a small set of values, not rewriting the UI.',
-      "This site is built that way. The navy-and-silver of our logo carries through both modes, and an indigo accent ties them together. Try the toggle in the header — nothing should feel like an afterthought in either direction.",
-    ],
-  },
-  {
-    slug: "scaling-to-zero-with-supabase",
-    title: "Scaling to zero with Supabase",
-    excerpt:
-      "How we run real products on a budget that starts at nothing — and only grows when the users do.",
-    category: "Infrastructure",
-    date: "2026-05-09",
-    readingTime: "7 min",
-    author: "Muhammad Ali",
-    content: [
-      "A new product shouldn't cost money before it has users. We build so that an idle app costs almost nothing and only grows its bill when real people show up — which is exactly when you can afford it.",
-      "Supabase is a big part of how we do that: a managed Postgres database, authentication, file storage, and serverless functions on a free tier that's generous enough to launch on. No servers to babysit, no fixed monthly floor to justify before launch.",
-      'The discipline is in the architecture — push work to the edge, cache what\'s stable, and keep the database lean. Do that, and "scale to zero" stops being a slogan and becomes your default cost.',
-    ],
-  },
-];
 
 export type Value = { title: string; description: string };
 export const values: Value[] = [

@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/section-heading";
 import { BlogCard } from "@/components/blog-card";
-import { blogPosts } from "@/lib/content";
+import { getPosts } from "@/lib/queries";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Blog",
   description: "Notes from the NurvexThink studio on how we design, build, and ship software.",
 };
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const posts = await getPosts();
+
   return (
     <>
       <section className="border-border relative overflow-hidden border-b">
@@ -28,11 +32,15 @@ export default function BlogPage() {
 
       <section className="py-16 sm:py-20">
         <Container>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {blogPosts.map((post) => (
-              <BlogCard key={post.slug} post={post} />
-            ))}
-          </div>
+          {posts.length === 0 ? (
+            <p className="text-muted-foreground">No posts published yet — check back soon.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post) => (
+                <BlogCard key={post.slug} post={post} />
+              ))}
+            </div>
+          )}
         </Container>
       </section>
     </>

@@ -5,11 +5,9 @@ import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { products } from "@/lib/content";
+import { getProductBySlug } from "@/lib/queries";
 
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -17,14 +15,14 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = products.find((p) => p.slug === slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Product not found" };
   return { title: product.name, description: product.summary };
 }
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = products.find((p) => p.slug === slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   return (
@@ -43,8 +41,12 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             <span className="text-primary">{product.category}</span>
             <span aria-hidden>·</span>
             <span>{product.status}</span>
-            <span aria-hidden>·</span>
-            <span>{product.year}</span>
+            {product.year ? (
+              <>
+                <span aria-hidden>·</span>
+                <span>{product.year}</span>
+              </>
+            ) : null}
           </div>
           <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-5xl">
             {product.name}
@@ -52,25 +54,29 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           <p className="text-muted-foreground text-lg text-pretty">{product.summary}</p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {product.tags.map((tag) => (
-            <span
-              key={tag}
-              className="border-border bg-muted text-muted-foreground rounded-md border px-2.5 py-1 text-xs"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
+        {product.tags.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {product.tags.map((tag) => (
+              <span
+                key={tag}
+                className="border-border bg-muted text-muted-foreground rounded-md border px-2.5 py-1 text-xs"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
 
-        <div className="border-border bg-card rounded-2xl border p-6 sm:p-8">
-          <p className="text-foreground/90 text-base leading-relaxed">{product.description}</p>
-        </div>
+        {product.description ? (
+          <div className="border-border bg-card rounded-2xl border p-6 sm:p-8">
+            <p className="text-foreground/90 text-base leading-relaxed">{product.description}</p>
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          {product.status === "Soon" ? (
+          {product.status === "Soon" || !product.liveUrl || product.liveUrl === "#" ? (
             <span className={cn(buttonVariants({ size: "lg" }), "pointer-events-none opacity-60")}>
-              Coming soon
+              {product.status === "Soon" ? "Coming soon" : "Live link soon"}
             </span>
           ) : (
             <a

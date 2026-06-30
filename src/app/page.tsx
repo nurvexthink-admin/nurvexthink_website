@@ -7,9 +7,16 @@ import { ProductCard } from "@/components/product-card";
 import { BlogCard } from "@/components/blog-card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { blogPosts, processSteps, products, services, siteConfig, stats } from "@/lib/content";
+import { processSteps, services, siteConfig, stats } from "@/lib/content";
+import { getPosts, getProducts } from "@/lib/queries";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [products, posts] = await Promise.all([getProducts(), getPosts()]);
+  const featured = products.slice(0, 6);
+  const recentPosts = posts.slice(0, 3);
+
   return (
     <>
       {/* ---------------- Hero ---------------- */}
@@ -84,31 +91,33 @@ export default function HomePage() {
       </section>
 
       {/* ---------------- Featured products ---------------- */}
-      <section className="border-border border-t py-20 sm:py-28">
-        <Container className="flex flex-col gap-12">
-          <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
-            <SectionHeading
-              align="left"
-              eyebrow="Catalog"
-              title="Products we've shipped"
-              description="Software we build, run, and keep improving. Click any product to learn more."
-              className="max-w-xl"
-            />
-            <Link
-              href="/products"
-              className="group text-primary inline-flex items-center gap-1.5 text-sm font-medium"
-            >
-              View all products
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {products.slice(0, 6).map((product) => (
-              <ProductCard key={product.slug} product={product} />
-            ))}
-          </div>
-        </Container>
-      </section>
+      {featured.length > 0 ? (
+        <section className="border-border border-t py-20 sm:py-28">
+          <Container className="flex flex-col gap-12">
+            <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+              <SectionHeading
+                align="left"
+                eyebrow="Catalog"
+                title="Products we've shipped"
+                description="Software we build, run, and keep improving. Click any product to learn more."
+                className="max-w-xl"
+              />
+              <Link
+                href="/products"
+                className="group text-primary inline-flex items-center gap-1.5 text-sm font-medium"
+              >
+                View all products
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.map((product) => (
+                <ProductCard key={product.slug} product={product} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      ) : null}
 
       {/* ---------------- Process ---------------- */}
       <section className="border-border border-t py-20 sm:py-28">
@@ -134,31 +143,33 @@ export default function HomePage() {
       </section>
 
       {/* ---------------- Blog preview ---------------- */}
-      <section className="border-border border-t py-20 sm:py-28">
-        <Container className="flex flex-col gap-12">
-          <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
-            <SectionHeading
-              align="left"
-              eyebrow="Writing"
-              title="From the studio"
-              description="Notes on how we build, design, and ship."
-              className="max-w-xl"
-            />
-            <Link
-              href="/blog"
-              className="group text-primary inline-flex items-center gap-1.5 text-sm font-medium"
-            >
-              Read the blog
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {blogPosts.slice(0, 3).map((post) => (
-              <BlogCard key={post.slug} post={post} />
-            ))}
-          </div>
-        </Container>
-      </section>
+      {recentPosts.length > 0 ? (
+        <section className="border-border border-t py-20 sm:py-28">
+          <Container className="flex flex-col gap-12">
+            <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+              <SectionHeading
+                align="left"
+                eyebrow="Writing"
+                title="From the studio"
+                description="Notes on how we build, design, and ship."
+                className="max-w-xl"
+              />
+              <Link
+                href="/blog"
+                className="group text-primary inline-flex items-center gap-1.5 text-sm font-medium"
+              >
+                Read the blog
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {recentPosts.map((post) => (
+                <BlogCard key={post.slug} post={post} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      ) : null}
 
       {/* ---------------- CTA ---------------- */}
       <section className="py-20 sm:py-28">

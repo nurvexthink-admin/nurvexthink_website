@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/section-heading";
 import { ProductCard } from "@/components/product-card";
-import { products } from "@/lib/content";
+import { getProducts } from "@/lib/queries";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Products",
   description: "Software NurvexThink designs, builds, and ships — explore the catalog.",
 };
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const products = await getProducts();
+
   return (
     <>
       <section className="border-border relative overflow-hidden border-b">
@@ -28,11 +32,15 @@ export default function ProductsPage() {
 
       <section className="py-16 sm:py-20">
         <Container>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <ProductCard key={product.slug} product={product} />
-            ))}
-          </div>
+          {products.length === 0 ? (
+            <p className="text-muted-foreground">No products published yet — check back soon.</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {products.map((product) => (
+                <ProductCard key={product.slug} product={product} />
+              ))}
+            </div>
+          )}
         </Container>
       </section>
     </>

@@ -3,11 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Container } from "@/components/ui/container";
-import { blogPosts } from "@/lib/content";
+import { getPostBySlug } from "@/lib/queries";
 
-export function generateStaticParams() {
-  return blogPosts.map((p) => ({ slug: p.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -15,7 +13,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+  const post = await getPostBySlug(slug);
   if (!post) return { title: "Post not found" };
   return { title: post.title, description: post.excerpt };
 }
@@ -30,7 +28,7 @@ function formatDate(iso: string) {
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+  const post = await getPostBySlug(slug);
   if (!post) notFound();
 
   return (
@@ -47,8 +45,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <header className="flex flex-col gap-4">
           <div className="text-muted-foreground flex items-center gap-3 font-mono text-xs tracking-[0.14em] uppercase">
             <span className="text-primary">{post.category}</span>
-            <span aria-hidden>·</span>
-            <span>{post.readingTime}</span>
+            {post.readingTime ? (
+              <>
+                <span aria-hidden>·</span>
+                <span>{post.readingTime}</span>
+              </>
+            ) : null}
           </div>
           <h1 className="font-heading text-3xl font-bold tracking-tight text-balance sm:text-5xl">
             {post.title}
@@ -61,7 +63,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         </header>
 
         <div className="flex flex-col gap-5">
-          <p className="text-foreground/90 text-lg leading-relaxed text-pretty">{post.excerpt}</p>
+          {post.excerpt ? (
+            <p className="text-foreground/90 text-lg leading-relaxed text-pretty">{post.excerpt}</p>
+          ) : null}
           {post.content.map((paragraph, i) => (
             <p key={i} className="text-muted-foreground leading-relaxed">
               {paragraph}
