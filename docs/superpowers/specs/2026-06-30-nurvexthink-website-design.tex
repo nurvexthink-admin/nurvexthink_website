@@ -1,0 +1,339 @@
+\documentclass[11pt,a4paper]{article}
+
+% ---------- packages ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+% ---------- brand colours ----------
+\definecolor{ink}{HTML}{0A0A0B}
+\definecolor{navy}{HTML}{1E2A44}
+\definecolor{slate}{HTML}{2D3A5C}
+\definecolor{silver}{HTML}{8A93A6}
+\definecolor{lightgray}{HTML}{F2F3F5}
+\definecolor{codebg}{HTML}{F5F6F8}
+
+\graphicspath{{../../../brand/}}
+
+% ---------- hyperref ----------
+\hypersetup{
+  pdftitle={NurvexThink -- Main Website Design Spec},
+  pdfauthor={NurvexThink},
+  colorlinks=true, linkcolor=navy, urlcolor=slate, citecolor=navy
+}
+
+% ---------- headings ----------
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{slate}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.6em}
+
+% ---------- header / footer ----------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\lhead{\small\color{slate}NurvexThink}
+\rhead{\small\color{slate}Main Website Design Spec}
+\cfoot{\small\color{slate}\thepage}
+
+% ---------- code listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{silver},
+  breaklines=true, columns=fullflexible,
+  xleftmargin=0.5em, framexleftmargin=0.5em,
+  showstringspaces=false
+}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\setlist{itemsep=2pt, topsep=3pt}
+
+% ---------- title page ----------
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+\colorbox{ink}{%
+  \begin{minipage}[c][6cm][c]{0.92\textwidth}
+    \centering
+    \includegraphics[width=4cm]{NurvexThink_logo.jpeg}\\[0.6cm]
+    {\Huge\bfseries\color{white} NurvexThink}\\[0.2cm]
+    {\large\color{silver} Software, built and published.}
+  \end{minipage}%
+}
+
+\vspace{1.6cm}
+{\Large\bfseries\color{navy} Main Website --- Design Specification}\\[0.4cm]
+{\large\color{slate} Public hub: product showcase, blog, custom-order intake, admin dashboard}
+
+\vfill
+\begin{tabular}{rl}
+\textbf{Date:} & 2026-06-30\\
+\textbf{Status:} & Approved (design phase)\\
+\textbf{Owner:} & Fatima Abdul Raheem (CEO)\\
+\end{tabular}
+\vspace{1.5cm}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ===================================================================
+\section{Overview}
+NurvexThink is a software company that builds and publishes software products, takes custom
+software orders on demand, and writes blog posts about its work. This spec covers the
+\textbf{main website} --- the public hub that showcases products (with links to their live
+apps), hosts the blog, captures custom-software leads, and provides an admin dashboard for the
+team to manage content.
+
+\textbf{Out of scope (separate future specs):} the individual software products themselves.
+Each product is its own repository and deployment, linked to from this site.
+
+\subsection{Goals}
+\begin{itemize}
+  \item Premium, dark/metallic brand presence with signature 3D visuals.
+  \item Showcase published software with links to live apps.
+  \item Blog (created/edited via an admin dashboard --- no coding required to publish).
+  \item Capture custom-software leads via a simple form.
+  \item \$0 to launch (free tiers), with a clear paid-upgrade path.
+\end{itemize}
+
+\subsection{Non-goals (deferred)}
+\begin{itemize}
+  \item Client accounts / order-tracking dashboard (lead form only at launch).
+  \item Online payments (Stripe) --- later phase.
+  \item Multi-language / i18n.
+\end{itemize}
+
+% ===================================================================
+\section{Brand}
+Standardized name: \textbf{NurvexThink} (display) / \texttt{nurvexthink} (lowercase: domains,
+repos, handles). Theme derived from the logo (navy/slate ``N'' + metallic silver ``T'' on black).
+
+\begin{center}
+\begin{tabularx}{\textwidth}{l l Y}
+\toprule
+\textbf{Token} & \textbf{Value} & \textbf{Use}\\
+\midrule
+\texttt{-{}-bg} & \texttt{\#0A0A0B} & near-black background\\
+\texttt{-{}-primary-1} & \texttt{\#1E2A44} & navy/slate (gradient start)\\
+\texttt{-{}-primary-2} & \texttt{\#2D3A5C} & slate (gradient end)\\
+\texttt{-{}-accent-1} & \texttt{\#C0C5CE} & metallic silver (gradient start)\\
+\texttt{-{}-accent-2} & \texttt{\#E8EBF0} & bright silver (gradient end)\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Fonts:} Space Grotesk / Sora (headings), Inter (body).\\
+\textbf{Vibe:} dark-mode-first, glassmorphism panels, metallic gradients on hover, 3D ``NT'' hero.
+
+% ===================================================================
+\section{Architecture}
+\textbf{Approach A (chosen): Next.js + Supabase on Vercel. No separate backend server.}
+
+\begin{lstlisting}
+[ Browser ]
+    |  HTTPS
+[ Next.js 15 App Router on Vercel ]
+    |  - React Server Components (data fetching, SEO)
+    |  - Client Components (3D, interactivity) at the leaves
+    |  - Route Handlers / Server Actions (form mutations)
+    |
+[ Supabase Cloud ]
+    - Postgres (data)         - Auth (admin login)
+    - Storage (images)        - Edge Functions (custom logic, if needed)
+    - Row Level Security (RLS) on every table
+\end{lstlisting}
+
+\subsection{Stack}
+\begin{center}
+\begin{tabularx}{\textwidth}{l Y}
+\toprule
+\textbf{Layer} & \textbf{Choice}\\
+\midrule
+Language & TypeScript\\
+Framework & Next.js 15 (App Router) + React\\
+Styling & Tailwind CSS + shadcn/ui\\
+3D & React Three Fiber + drei + Three.js (Spline optional for no-code scenes)\\
+Animation & Framer Motion (+ GSAP for advanced sequences)\\
+Backend & Supabase (Postgres, Auth, Storage, Edge Functions)\\
+Hosting & Vercel (site) + Supabase Cloud (backend)\\
+Deploy & Public GitHub repo + GitHub Actions + Vercel token\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ===================================================================
+\section{Components / Pages}
+\begin{center}
+\begin{tabularx}{\textwidth}{l l Y}
+\toprule
+\textbf{Route} & \textbf{Type} & \textbf{Purpose}\\
+\midrule
+\texttt{/} & public & Home: 3D metallic ``NT'' hero, featured products, CTA\\
+\texttt{/products} & public & Grid of published software\\
+\texttt{/products/[slug]} & public & Product detail + link to live app + repo\\
+\texttt{/blog} & public & Blog list\\
+\texttt{/blog/[slug]} & public & Blog post\\
+\texttt{/order} & public & ``Request custom software'' lead form\\
+\texttt{/about} & public & Company + team\\
+\texttt{/contact} & public & Contact info\\
+\texttt{/admin} & protected & Dashboard: manage products, blog posts, view leads\\
+\texttt{/admin/login} & public & Admin auth (Supabase)\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ===================================================================
+\section{Data model (Supabase)}
+\subsection{Tables}
+\begin{itemize}
+  \item \texttt{profiles} --- \texttt{id (= auth.users.id)}, \texttt{email}, \texttt{full\_name},
+        \texttt{role} (owner / admin), \texttt{created\_at}
+  \item \texttt{products} --- \texttt{id}, \texttt{slug} (unique), \texttt{name}, \texttt{summary},
+        \texttt{description}, \texttt{cover\_image}, \texttt{live\_url}, \texttt{repo\_url},
+        \texttt{tags}, \texttt{featured}, \texttt{published}, timestamps
+  \item \texttt{blog\_posts} --- \texttt{id}, \texttt{slug} (unique), \texttt{title}, \texttt{excerpt},
+        \texttt{content}, \texttt{cover\_image}, \texttt{author\_id}, \texttt{status}
+        (draft / published), \texttt{published\_at}, timestamps
+  \item \texttt{orders} --- \texttt{id}, \texttt{name}, \texttt{email}, \texttt{company},
+        \texttt{project\_type}, \texttt{budget}, \texttt{details}, \texttt{status}
+        (new / contacted / closed), \texttt{created\_at}
+\end{itemize}
+
+\subsection{Storage buckets}
+\begin{itemize}
+  \item \texttt{product-images} (public read, admin write)
+  \item \texttt{blog-images} (public read, admin write)
+\end{itemize}
+
+\subsection{Row Level Security (enabled on EVERY table, default-deny)}
+\begin{itemize}
+  \item \texttt{products}/\texttt{blog\_posts}: public SELECT where published; admins full access.
+  \item \texttt{orders}: public INSERT only (with validation); admins SELECT/UPDATE; no public read.
+  \item \texttt{profiles}: a user reads/updates own row; admins read all.
+  \item Index every column referenced in an RLS policy (e.g.\ \texttt{published}, \texttt{status}, \texttt{author\_id}).
+\end{itemize}
+
+% ===================================================================
+\section{Security}
+\begin{itemize}
+  \item RLS on every public-schema table, no exceptions (Supabase is default-deny).
+  \item \texttt{service\_role} key is server-side only --- never in client code or the repo;
+        stored as a Vercel / GitHub Actions secret.
+  \item \texttt{anon} key is public-safe because RLS protects the data.
+  \item Lead form: validate input server-side; add basic anti-spam (honeypot / rate limit).
+  \item Admin routes guarded by Supabase Auth + middleware; \texttt{/admin} checks \texttt{profiles.role}.
+\end{itemize}
+
+% ===================================================================
+\section{Deployment \& GitHub}
+\begin{itemize}
+  \item \textbf{Repo:} \texttt{nurvexthink/nurvexthink-web} (public).
+  \item \textbf{Vercel project:} named independently (e.g.\ \texttt{nurvexthink}); custom domain later.
+  \item \textbf{Deploy:} GitHub Actions builds and deploys with a Vercel token on merge to \texttt{main}.
+        This sidesteps Vercel Hobby's org-private-repo + commit-author restrictions, so all three
+        admins' merged work deploys for free.
+  \item \textbf{Env vars / secrets} live in Vercel + GitHub Actions, never in the repo.
+  \item \textbf{Branch protection:} \texttt{main} requires a PR + 1 review; no direct pushes.
+  \item \textbf{Commit identity:} Fatima Abdul Raheem (CEO), \texttt{fatima.abdulraheemdev.17@gmail.com},
+        is the committing GitHub account for the \texttt{nurvexthink} org.
+  \item \textbf{Commits:} Conventional Commits (\texttt{feat:}, \texttt{fix:}, \texttt{chore:}, \texttt{docs:}).
+\end{itemize}
+
+\subsection{Vercel/GitHub deployment notes (researched)}
+\begin{itemize}
+  \item A Vercel project name can differ from the GitHub username and repo name --- no limitation.
+  \item Vercel Hobby cannot deploy private repos owned by a GitHub org, and only the owner's
+        commits trigger deploys $\rightarrow$ resolved by public repo + GitHub Actions (chosen),
+        or by upgrading to Vercel Pro Team (\textasciitilde\$20/seat/mo) later.
+  \item Cloudflare Pages is the fallback host (more generous org/team free tier, rougher Next.js support).
+\end{itemize}
+
+% ===================================================================
+\section{Org management}
+\subsection{GitHub org (\texttt{nurvexthink})}
+\begin{itemize}
+  \item Repos: \texttt{nurvexthink-web} + one repo per published product.
+  \item Roles: CEO + shared \texttt{nurvexthink@gmail.com} = Owners; CFO = Owner or Maintainer.
+  \item Require 2FA org-wide; enable Dependabot + secret scanning.
+  \item Protect \texttt{main} with required PR review.
+\end{itemize}
+
+\subsection{Supabase org (\texttt{nurvexthink})}
+\begin{itemize}
+  \item One Supabase project for the main site; each product needing a DB gets its own project.
+  \item Invite all 3 admins; Owners for CEO + shared account, Developer/Admin for CFO.
+  \item Split into staging + prod projects when it matters (start with one).
+  \item Daily backups (paid tier) when justified.
+\end{itemize}
+
+% ===================================================================
+\section{Performance \& quality (researched best practices)}
+\subsection{Next.js}
+\begin{itemize}
+  \item Server Components by default; keep \texttt{"use client"} at the leaves.
+  \item \texttt{next/image} with \texttt{priority} for the above-the-fold hero (LCP).
+  \item Lean on the React Compiler (Next 15+); cache/revalidate \texttt{fetch}.
+  \item Target Core Web Vitals (LCP, INP, CLS).
+\end{itemize}
+\subsection{React Three Fiber / Three.js}
+\begin{itemize}
+  \item \texttt{frameloop="demand"} --- render only on change.
+  \item Mutate via \texttt{useFrame} + refs, never React state in the loop.
+  \item Compressed textures (KTX2/Basis), compressed models (GLB + Draco), \texttt{useGLTF.preload()}.
+  \item LOD via drei \texttt{<Detailed>}; dispose GPU resources; lazy-load 3D so it never blocks first paint.
+  \item Monitor with \texttt{r3f-perf}.
+\end{itemize}
+\subsection{Supabase / Postgres}
+\begin{itemize}
+  \item Index columns used in RLS policies and frequent filters.
+  \item Test RLS with Studio impersonation before launch.
+\end{itemize}
+
+% ===================================================================
+\section{Testing}
+\begin{itemize}
+  \item Unit/component tests for form validation and admin auth logic.
+  \item RLS policy tests (Studio impersonation, or \texttt{supabase test db} with pgTAP).
+  \item Lighthouse / Core Web Vitals check before launch.
+  \item Manual: lead form submits $\rightarrow$ row in \texttt{orders}; admin publishes a product/post
+        $\rightarrow$ appears publicly.
+\end{itemize}
+
+% ===================================================================
+\section{Build order (high level)}
+\begin{enumerate}
+  \item Repo + tooling: Next.js + TS + Tailwind + shadcn, CLAUDE.md, skills, CI.
+  \item Brand/theme system + layout shell (nav, footer, dark theme).
+  \item Supabase project + schema + RLS + seed data.
+  \item Public pages: Home (with 3D hero), Products, Blog, Order form.
+  \item Admin auth + dashboard CRUD (products, blog, orders).
+  \item 3D hero polish + performance pass.
+  \item Deploy pipeline (GitHub Actions $\rightarrow$ Vercel) + domain.
+\end{enumerate}
+
+% ===================================================================
+\section{Open items / future phases}
+\begin{itemize}
+  \item Client accounts + order tracking.
+  \item Stripe payments.
+  \item Staging Supabase environment.
+  \item Per-product repos and deployments (separate specs).
+\end{itemize}
+
+\end{document}

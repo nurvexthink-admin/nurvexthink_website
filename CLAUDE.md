@@ -74,16 +74,17 @@ Detailed rules live in `.claude/skills/nurvexthink-nextjs-perf` and
 - **GitHub org:** `nurvexthink`. **Supabase org:** `nurvexthink`.
 - **Admins:**
   - Shared/company: `nurvexthink@gmail.com` (Owner — continuity/recovery)
-  - CEO — Muhammad Ali: `muhammadalidev3@gmail.com` (Owner)
-  - CFO — Fatima: `fatima.abdulraheemdev.17@gmail.com` (Owner/Maintainer)
+  - **CEO — Fatima Abdul Raheem**: `fatima.abdulraheemdev.17@gmail.com` (Owner; **primary committing account for the nurvexthink org**)
+  - CFO — Muhammad Ali: `muhammadalidev3@gmail.com` (Owner/Maintainer)
 - Require 2FA org-wide. Enable Dependabot + secret scanning.
 
 ## Environment variables (set in Vercel / GitHub Actions, not the repo)
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=   # server-side only
+# Project ref: axbsghyqhhdaiylcksbv  (dashboard: https://supabase.com/dashboard/project/axbsghyqhhdaiylcksbv)
+NEXT_PUBLIC_SUPABASE_URL=https://axbsghyqhhdaiylcksbv.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=    # public-safe; copy from Supabase > Project Settings > API
+SUPABASE_SERVICE_ROLE_KEY=        # server-side ONLY; never commit; set in Vercel/Actions secrets
 ```
 
 ## Where things live

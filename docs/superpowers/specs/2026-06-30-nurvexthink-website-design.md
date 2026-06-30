@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-30
 **Status:** Approved (design phase)
-**Owner:** Muhammad Ali (CEO)
+**Owner:** Fatima Abdul Raheem (CEO)
 
 ---
 
@@ -145,6 +145,8 @@ and can be understood and tested independently.
   admins' merged work deploys for free.
 - **Env vars / secrets** live in Vercel + GitHub Actions, never in the repo.
 - **Branch protection:** `main` requires a PR + 1 review; no direct pushes.
+- **Commit identity:** Fatima Abdul Raheem (CEO), `fatima.abdulraheemdev.17@gmail.com`, is the
+  committing GitHub account for the `nurvexthink` org.
 - **Commits:** Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`…).
 
 ### Vercel/GitHub deployment notes (researched)

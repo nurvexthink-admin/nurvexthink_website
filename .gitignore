@@ -42,3 +42,13 @@ yarn-error.log*
 # editor / OS
 .idea/
 *.swp
+
+# latex build artifacts (keep the .tex source and the .pdf output)
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+build*.log
