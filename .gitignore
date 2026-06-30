@@ -43,6 +43,9 @@ yarn-error.log*
 .idea/
 *.swp
 
+# subagent-driven-development scratch (progress ledger, briefs, reports)
+.superpowers/
+
 # latex build artifacts (keep the .tex source and the .pdf output)
 *.aux
 *.log
