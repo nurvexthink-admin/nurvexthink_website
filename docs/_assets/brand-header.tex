@@ -1,0 +1,19 @@
+% Reusable pandoc LaTeX header for NurvexThink documents.
+% Use with: pandoc input.md -o out.pdf --pdf-engine=xelatex \
+%   -V mainfont="Segoe UI" -V colorlinks=true -V linkcolor=NTnavy -V urlcolor=NTslate \
+%   --highlight-style=tango --include-in-header=docs/_assets/brand-header.tex
+\usepackage{xcolor}
+\usepackage{titlesec}
+\definecolor{NTink}{HTML}{0A0A0B}
+\definecolor{NTnavy}{HTML}{1E2A44}
+\definecolor{NTslate}{HTML}{2D3A5C}
+\definecolor{NTsilver}{HTML}{8A93A6}
+\titleformat*{\section}{\Large\bfseries\color{NTnavy}}
+\titleformat*{\subsection}{\large\bfseries\color{NTslate}}
+\titleformat*{\subsubsection}{\normalsize\bfseries\color{NTslate}}
+% Map Unicode symbols used in docs to always-available LaTeX glyphs
+\usepackage{amssymb}
+\usepackage{newunicodechar}
+\newunicodechar{✓}{\ensuremath{\color{NTnavy}\checkmark}}
+\newunicodechar{✗}{\ensuremath{\times}}
+\newunicodechar{→}{\ensuremath{\rightarrow}}
