@@ -8,7 +8,7 @@ import { BlogCard } from "@/components/blog-card";
 import { HeroCanvas } from "@/components/hero-canvas";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { processSteps, services, siteConfig, stats } from "@/lib/content";
+import { processSteps, services, stats } from "@/lib/content";
 import { getPosts, getProducts } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
