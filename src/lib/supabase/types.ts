@@ -71,21 +71,13 @@ export type Database = {
       };
       products: {
         Row: ProductStatusRow;
-        Insert: Omit<ProductStatusRow, "id" | "created_at" | "updated_at"> & {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+        Insert: { slug: string; name: string } & Partial<Omit<ProductStatusRow, "slug" | "name">>;
         Update: Partial<ProductStatusRow>;
         Relationships: [];
       };
       blog_posts: {
         Row: BlogPostRow;
-        Insert: Omit<BlogPostRow, "id" | "created_at" | "updated_at"> & {
-          id?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
+        Insert: { slug: string; title: string } & Partial<Omit<BlogPostRow, "slug" | "title">>;
         Update: Partial<BlogPostRow>;
         Relationships: [];
       };
