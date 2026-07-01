@@ -62,7 +62,15 @@ export function Footer() {
           <p>
             © {year} {siteConfig.name}. All rights reserved.
           </p>
-          <p className="font-mono text-xs">{siteConfig.tagline}</p>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/admin"
+              className="hover:text-foreground font-mono text-xs transition-colors"
+            >
+              Admin
+            </Link>
+            <p className="font-mono text-xs">{siteConfig.tagline}</p>
+          </div>
         </div>
       </Container>
     </footer>
