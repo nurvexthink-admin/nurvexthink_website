@@ -79,12 +79,12 @@
 
 \vspace{1.6cm}
 {\Large\bfseries\color{navy} Animated Ambient Logo Background --- Design Specification}\\[0.4cm]
-{\large\color{slate} Site-wide shining NT-monogram watermark over drifting aurora, theme-aware}
+{\large\color{slate} The real mark, extruded in true 3D, turning site-wide behind the content}
 
 \vfill
 \begin{tabular}{rl}
-\textbf{Date:} & 2026-07-03\\
-\textbf{Status:} & Approved (design phase)\\
+\textbf{Date:} & 2026-07-03 (updated same day to the as-built design)\\
+\textbf{Status:} & Approved \& implemented\\
 \textbf{Owner:} & Fatima Abdul Raheem (CEO)\\
 \end{tabular}
 \vspace{1.5cm}
@@ -95,68 +95,87 @@
 
 % ===================================================================
 \section{Overview}
-Replace the current per-section static backdrops with a single \textbf{site-wide animated
-ambient background}: a large, low-opacity \textbf{NT monogram watermark} that gently drifts and
-``shines'', floating over slow-moving aurora glows and a faint blueprint grid. The effect is
-\textbf{theme-aware} (distinct palettes for dark and light) and reacts subtly to the mouse for
-depth. It renders \textbf{once}, behind all public pages, and is suppressed on \texttt{/admin}.
+Replace the per-section static backdrops with a single \textbf{site-wide animated ambient
+background}: the \textbf{real NurvexThink mark, extruded into true 3D}, slowly turning like a
+physical object on a turntable, floating over slow-moving aurora glows and a faint blueprint
+grid. The watermark \emph{is} the hero visual --- the home headline sits directly over it, so
+the site has exactly \textbf{one} live WebGL scene.
+
+The effect is \textbf{theme-aware} (opacity/lift per theme; the logo keeps its true colours in
+light mode) and reacts subtly to the mouse for depth. It renders \textbf{once}, behind all
+public pages, and is suppressed on \texttt{/admin}.
 
 \subsection{Goals}
 \begin{itemize}
-  \item A premium, branded atmosphere that reinforces the NurvexThink mark on every public page.
-  \item A tasteful ``shine'' that sweeps across the logo watermark, clipped to the letterforms.
+  \item A premium, branded atmosphere that reinforces the real mark on every public page.
+  \item True 3D: depth, beveled edges, metallic shine as the mark turns.
   \item Smooth, GPU-friendly motion that never harms readability or Core Web Vitals.
   \item Fully theme-aware, honoring \texttt{prefers-reduced-motion}.
 \end{itemize}
 
 \subsection{Non-goals}
 \begin{itemize}
-  \item No canvas / WebGL / shader background (the hero already owns one GPU context).
+  \item No second live 3D scene (the old hero crystal/canvas was removed in favour of this one).
   \item No per-page configuration or CMS control of the background.
   \item Not shown on admin pages (kept clean and functional).
 \end{itemize}
 
 % ===================================================================
-\section{Locked decisions}
+\section{Locked decisions (as built)}
 \begin{center}
 \begin{tabularx}{\textwidth}{l Y}
 \toprule
 \textbf{Decision} & \textbf{Choice}\\
 \midrule
 Scope & Site-wide --- one fixed layer behind all public pages; excluded on \texttt{/admin*}\\
-Style & Layered atmosphere --- centered NT monogram + drifting aurora + faint grid + shine\\
-Motion & Ambient + mouse parallax (parallax disabled on touch and reduced-motion)\\
-Intensity & Balanced --- clearly present, always behind content; watermark $\sim$6--10\% opacity\\
-Technique & Pure CSS transforms + inline SVG (no canvas / WebGL)\\
+Watermark & The real logo in true 3D --- auto-traced outlines, extruded, beveled, metallic PBR\\
+Motion & Slow full 360\textdegree{} turn ($\sim$22\,s) + gentle float, plus mouse parallax on
+the layer (parallax off on touch and reduced-motion)\\
+Colour & True logo colours in both themes (no light-mode tint); dark mode gets a brightness
+lift to read on black\\
+Materials & Navy N: deep \texttt{\#1C2848}, glossy clearcoat. Silver T: bright
+\texttt{\#DDE2EA}, high metalness\\
+Architecture & One WebGL scene site-wide (lazy-loaded R3F canvas, dpr $\le 1.5$) + CSS-only
+aurora/grid\\
 \bottomrule
 \end{tabularx}
 \end{center}
 
 % ===================================================================
 \section{Approach}
-Chosen: \textbf{CSS transforms + inline SVG}, animating only \texttt{transform} and
-\texttt{opacity} so all motion runs on the compositor. Rejected alternatives: a WebGL / canvas
-shader (a second always-on GPU context site-wide --- overkill, worse battery, conflicts with the
-``lazy-load 3D so it never blocks paint'' rule) and animated SVG filters / \texttt{feTurbulence}
-(CPU-heavy, hard to theme).
+The watermark is a real extruded mesh (React Three Fiber), because a flat image cannot show
+true perspective, bevels, or specular shine. Everything else (aurora, grid, parallax) stays
+\textbf{pure CSS transforms/opacity} on the compositor. Rejected: multiple canvases (hero +
+background) --- duplicate GPU cost and two copies of the mark on screen; CSS-3D image tricks ---
+no real depth or lighting.
+
+\subsection{Logo fidelity}
+\texttt{public/logo.jpeg} is raster on black, so the pipeline is: knock out the background
+$\rightarrow$ \texttt{public/logo-mark.png} (transparent, cropped) $\rightarrow$
+\textbf{auto-trace with potrace} into two smooth vector path sets (navy N, silver T) stored in
+\texttt{src/components/logo-shapes.ts}. The trace was visually verified against the original;
+regenerate it if the brand mark ever changes.
 
 % ===================================================================
 \section{Architecture}
-One client component, mounted once in the root layout.
-
 \begin{center}
 \begin{tabularx}{\textwidth}{l Y}
 \toprule
 \textbf{Unit} & \textbf{Responsibility}\\
 \midrule
-\texttt{components/ambient-background.tsx} (\texttt{"use client"}) & The
-\texttt{fixed inset-0 -z-10 pointer-events-none} layer, \texttt{aria-hidden}. Owns the
-mouse-parallax effect and visibility rules. Returns \texttt{null} on \texttt{/admin*}.\\
-\texttt{components/nt-mark.tsx} & The traced NT monogram as a reusable inline SVG, tintable via
-\texttt{currentColor} / CSS vars. Swappable for an official SVG later.\\
-\texttt{app/globals.css} & New keyframes (\texttt{aurora-drift}, \texttt{gleam-sweep},
-\texttt{breathe}) and \texttt{.ambient-*} classes, theme-aware through existing tokens.\\
-\texttt{app/layout.tsx} & Mounts \texttt{<AmbientBackground />} as the first child of
+\texttt{components/ambient-background.tsx} & The \texttt{fixed inset-0 -z-10
+pointer-events-none} layer, \texttt{aria-hidden}. Owns mouse parallax and visibility rules;
+returns \texttt{null} on \texttt{/admin*}. Lazy-loads the 3D scene.\\
+\texttt{components/ambient-logo-3d.tsx} & The one WebGL scene: extruded logo (SVGLoader
+$\rightarrow$ \texttt{ExtrudeGeometry}, bevels), metallic materials, brand-coloured
+Lightformer environment, 360\textdegree{} turntable via \texttt{useFrame} + refs.
+\texttt{dpr=[1,1.5]}, \texttt{frameloop="demand"} under reduced motion. Disposes geometries on
+unmount.\\
+\texttt{components/logo-shapes.ts} & The traced vector outlines of the real mark (data only).\\
+\texttt{app/globals.css} & Ambient tokens (\texttt{-{}-amb-*}), aurora/grid keyframes,
+\texttt{.ambient-*} classes. Size, opacity, per-theme filter, and parallax live on the CSS
+wrapper --- the 3D scene stays theme-blind.\\
+\texttt{app/layout.tsx} & Mounts \texttt{<AmbientBackground />} once, as the first child of
 \texttt{<body>}.\\
 \bottomrule
 \end{tabularx}
@@ -164,93 +183,75 @@ mouse-parallax effect and visibility rules. Returns \texttt{null} on \texttt{/ad
 
 \subsection{Layering (back to front)}
 \begin{enumerate}
-  \item \textbf{Base} --- existing \texttt{-{}-background} token (untouched; painted by \texttt{<body>}).
-  \item \textbf{Aurora} --- 2--3 large soft radial-gradient blobs, slowly drifting + breathing.
-  \item \textbf{Grid} --- the existing faint blueprint grid, full-page, edge-masked.
-  \item \textbf{Monogram watermark} --- large, centered NT, low opacity, gently breathing.
-  \item \textbf{Shine} --- a diagonal light band sweeping across the monogram every $\sim$6--8\,s,
-        \textbf{clipped to the letter shapes} via an SVG \texttt{clipPath} so the gleam only rides
-        the logo.
+  \item \textbf{Base} --- existing \texttt{-{}-background} token (painted by \texttt{<body>}).
+  \item \textbf{Aurora} --- three large soft radial-gradient blobs, slowly drifting + breathing (CSS).
+  \item \textbf{Grid} --- the faint blueprint grid, full-page, edge-masked (CSS).
+  \item \textbf{3D logo watermark} --- centred, \texttt{min(72vw, 860px)} wide, slowly turning;
+        opacity/lift from theme tokens.
 \end{enumerate}
 
-The ambient layer lives at \texttt{-z-10} as a child of \texttt{<body>}. Per CSS paint order, a
-negative \texttt{z-index} child paints \emph{above} the body's own \texttt{bg-background} fill but
-\emph{below} all in-flow content --- so it is visible in transparent regions and correctly hidden
-behind opaque \texttt{bg-card} surfaces.
+The layer sits at \texttt{-z-10} as a child of \texttt{<body>}: it paints above the body's
+background fill but below all in-flow content, so opaque \texttt{bg-card} surfaces naturally
+mask it.
 
 \subsection{Mouse parallax}
-A single \texttt{pointermove} listener (throttled with \texttt{requestAnimationFrame}) writes
-normalized \texttt{-{}-mx} / \texttt{-{}-my} ($-1\ldots1$) CSS variables on the layer root. Each
-layer translates a different magnitude toward the cursor (monogram least, aurora most) for depth.
-The listener is \textbf{not attached} when \texttt{(hover: none)} (touch) or
-\texttt{prefers-reduced-motion: reduce}.
+One rAF-throttled \texttt{pointermove} listener writes normalized
+\texttt{-{}-amb-mx}/\texttt{-{}-amb-my} ($-1\ldots1$) onto the layer root; each CSS layer
+translates a different magnitude (grid least, aurora most). Not attached when
+\texttt{(hover: none)} or \texttt{prefers-reduced-motion: reduce}.
 
 % ===================================================================
-\section{Theme-aware palette}
+\section{Theme behaviour}
 \begin{center}
 \begin{tabularx}{\textwidth}{l Y Y}
 \toprule
-\textbf{Layer} & \textbf{Dark} & \textbf{Light}\\
+\textbf{Token} & \textbf{Dark} & \textbf{Light}\\
 \midrule
-Aurora & indigo \texttt{\#5C7CFA} + navy \texttt{\#1E2A44} & indigo \texttt{\#8AA0FF} + cool blue, softer\\
-Monogram fill & silver \texttt{\#C0C5CE}$\rightarrow$\texttt{\#E8EBF0}, $\sim$8\% & navy \texttt{\#1E2A44}$\rightarrow$\texttt{\#2D3A5C}, low opacity\\
-Gleam & bright silver / white & white / indigo\\
-Grid & existing \texttt{-{}-grid-line} (faint silver) & existing \texttt{-{}-grid-line} (faint navy)\\
+\texttt{-{}-amb-logo-opacity} & 0.34 & 0.30\\
+\texttt{-{}-amb-logo-filter} & \texttt{brightness(1.5)} (lift to read on black) &
+\texttt{none} (true colours)\\
+Aurora colours & indigo/navy, stronger & indigo/blue, softer\\
 \bottomrule
 \end{tabularx}
 \end{center}
-Colors are driven by existing CSS custom properties, so the \texttt{.dark} class switch flips the
-whole background automatically.
-
-% ===================================================================
-\section{Integration adjustments}
-\begin{itemize}
-  \item \textbf{Home hero} (\texttt{src/app/page.tsx}): remove the now-redundant local
-        \texttt{.bg-grid} (the global grid covers it); keep the 3D crystal and a subtle local
-        \texttt{.bg-glow} for focal emphasis at the top of the hero.
-  \item \textbf{Admin} (\texttt{src/app/admin/(panel)/}): background suppressed via the
-        \texttt{usePathname} check in \texttt{ambient-background.tsx}.
-\end{itemize}
+The 3D materials never change per theme --- only the CSS wrapper's opacity/filter do.
 
 % ===================================================================
 \section{Performance \& accessibility}
 \begin{itemize}
-  \item Animate \textbf{only} \texttt{transform} / \texttt{opacity}; \texttt{will-change} applied
-        sparingly and scoped.
-  \item \texttt{pointer-events: none} and \texttt{aria-hidden="true"} on the whole layer.
-  \item Full \texttt{prefers-reduced-motion} support: the existing global guard in
-        \texttt{globals.css} freezes animation; the parallax listener additionally self-disables.
-  \item No layout thrash, no per-frame React state, no new dependencies.
+  \item One lazy-loaded WebGL scene site-wide (\texttt{next/dynamic}, \texttt{ssr:false}) ---
+        never blocks first paint; dpr capped at 1.5 (the layer is faint; extra resolution is
+        wasted GPU).
+  \item Turntable animates via \texttt{useFrame} ref mutation --- no React state in the loop.
+  \item Aurora/grid animate only \texttt{transform}/\texttt{opacity};
+        \texttt{pointer-events: none}; \texttt{aria-hidden}.
+  \item Reduced motion: canvas drops to \texttt{frameloop="demand"} (static frame), CSS
+        animations freeze via the global guard, parallax listener self-disables.
+  \item Manually created geometries are disposed on unmount.
 \end{itemize}
 
 % ===================================================================
 \section{Testing}
 \begin{itemize}
-  \item Component render test (\texttt{ambient-background.test.tsx}) matching the existing
-        \texttt{navbar.test.tsx} pattern: asserts the layer renders \texttt{aria-hidden}, and
-        renders nothing on an \texttt{/admin} path (mocked \texttt{usePathname}).
-  \item Keep the green bar: \texttt{npm run build}, \texttt{npm run typecheck},
-        \texttt{npm run lint}, \texttt{npm test} all pass.
-  \item Manual: verify the shine sweep, aurora drift, and mouse parallax in both themes; confirm
-        the background disappears on \texttt{/admin} and that content readability is unaffected.
+  \item \texttt{ambient-background.test.tsx}: layer renders \texttt{aria-hidden} on public
+        pages; the 3D watermark mounts inside its wrapper (scene stubbed under jsdom); renders
+        nothing on \texttt{/admin} paths.
+  \item Green bar: \texttt{npm run build}, \texttt{typecheck}, \texttt{lint}, \texttt{test}
+        all pass.
+  \item Manual: rotation, float, parallax verified in both themes; content readability
+        confirmed; \texttt{/admin} suppression confirmed.
 \end{itemize}
 
 % ===================================================================
-\section{Asset note}
-The provided \texttt{public/logo.jpeg} is a raster JPEG on a black background --- it cannot be
-tinted or masked. We therefore \textbf{trace a clean transparent SVG} of the NT monogram for
-\texttt{nt-mark.tsx}. It will closely match the mark; an official SVG can be dropped in later
-without other changes.
-
-% ===================================================================
-\section{Build order}
+\section{Build order (as executed)}
 \begin{enumerate}
-  \item Add \texttt{nt-mark.tsx} (traced SVG monogram).
-  \item Add keyframes + \texttt{.ambient-*} classes to \texttt{globals.css} (theme-aware).
-  \item Build \texttt{ambient-background.tsx} (layers + parallax + \texttt{/admin} suppression).
-  \item Mount in \texttt{layout.tsx}; trim the home hero's redundant grid.
-  \item Add the render test; run the full green-bar suite.
-  \item Visual QA in both themes; tune opacity / timing.
+  \item Knock out the logo background $\rightarrow$ \texttt{public/logo-mark.png}; auto-trace
+        $\rightarrow$ \texttt{logo-shapes.ts}.
+  \item Extruded 3D scene (\texttt{ambient-logo-3d.tsx}) with metallic materials + brand lighting.
+  \item Ambient layer (\texttt{ambient-background.tsx}): aurora + grid + 3D watermark +
+        parallax + \texttt{/admin} suppression; mounted once in \texttt{layout.tsx}.
+  \item Removed the hero's separate 3D canvas (crystal) --- the watermark is the hero visual.
+  \item Tests + full green bar; visual QA in both themes; tuned opacity/brightness/materials.
 \end{enumerate}
 
 \end{document}
