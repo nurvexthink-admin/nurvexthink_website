@@ -1,0 +1,256 @@
+\documentclass[11pt,a4paper]{article}
+
+% ---------- packages ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+% ---------- brand colours ----------
+\definecolor{ink}{HTML}{0A0A0B}
+\definecolor{navy}{HTML}{1E2A44}
+\definecolor{slate}{HTML}{2D3A5C}
+\definecolor{silver}{HTML}{8A93A6}
+\definecolor{indigo}{HTML}{5C7CFA}
+\definecolor{lightgray}{HTML}{F2F3F5}
+\definecolor{codebg}{HTML}{F5F6F8}
+
+\graphicspath{{../../../brand/}}
+
+% ---------- hyperref ----------
+\hypersetup{
+  pdftitle={NurvexThink -- Animated Ambient Logo Background},
+  pdfauthor={NurvexThink},
+  colorlinks=true, linkcolor=navy, urlcolor=slate, citecolor=navy
+}
+
+% ---------- headings ----------
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{slate}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.6em}
+
+% ---------- header / footer ----------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\lhead{\small\color{slate}NurvexThink}
+\rhead{\small\color{slate}Animated Ambient Background}
+\cfoot{\small\color{slate}\thepage}
+
+% ---------- code listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{silver},
+  breaklines=true, columns=fullflexible,
+  xleftmargin=0.5em, framexleftmargin=0.5em,
+  showstringspaces=false
+}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\setlist{itemsep=2pt, topsep=3pt}
+
+% ---------- title page ----------
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+\colorbox{ink}{%
+  \begin{minipage}[c][6cm][c]{0.92\textwidth}
+    \centering
+    \includegraphics[width=4cm]{NurvexThink_logo.jpeg}\\[0.6cm]
+    {\Huge\bfseries\color{white} NurvexThink}\\[0.2cm]
+    {\large\color{silver} Software, built and published.}
+  \end{minipage}%
+}
+
+\vspace{1.6cm}
+{\Large\bfseries\color{navy} Animated Ambient Logo Background --- Design Specification}\\[0.4cm]
+{\large\color{slate} Site-wide shining NT-monogram watermark over drifting aurora, theme-aware}
+
+\vfill
+\begin{tabular}{rl}
+\textbf{Date:} & 2026-07-03\\
+\textbf{Status:} & Approved (design phase)\\
+\textbf{Owner:} & Fatima Abdul Raheem (CEO)\\
+\end{tabular}
+\vspace{1.5cm}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ===================================================================
+\section{Overview}
+Replace the current per-section static backdrops with a single \textbf{site-wide animated
+ambient background}: a large, low-opacity \textbf{NT monogram watermark} that gently drifts and
+``shines'', floating over slow-moving aurora glows and a faint blueprint grid. The effect is
+\textbf{theme-aware} (distinct palettes for dark and light) and reacts subtly to the mouse for
+depth. It renders \textbf{once}, behind all public pages, and is suppressed on \texttt{/admin}.
+
+\subsection{Goals}
+\begin{itemize}
+  \item A premium, branded atmosphere that reinforces the NurvexThink mark on every public page.
+  \item A tasteful ``shine'' that sweeps across the logo watermark, clipped to the letterforms.
+  \item Smooth, GPU-friendly motion that never harms readability or Core Web Vitals.
+  \item Fully theme-aware, honoring \texttt{prefers-reduced-motion}.
+\end{itemize}
+
+\subsection{Non-goals}
+\begin{itemize}
+  \item No canvas / WebGL / shader background (the hero already owns one GPU context).
+  \item No per-page configuration or CMS control of the background.
+  \item Not shown on admin pages (kept clean and functional).
+\end{itemize}
+
+% ===================================================================
+\section{Locked decisions}
+\begin{center}
+\begin{tabularx}{\textwidth}{l Y}
+\toprule
+\textbf{Decision} & \textbf{Choice}\\
+\midrule
+Scope & Site-wide --- one fixed layer behind all public pages; excluded on \texttt{/admin*}\\
+Style & Layered atmosphere --- centered NT monogram + drifting aurora + faint grid + shine\\
+Motion & Ambient + mouse parallax (parallax disabled on touch and reduced-motion)\\
+Intensity & Balanced --- clearly present, always behind content; watermark $\sim$6--10\% opacity\\
+Technique & Pure CSS transforms + inline SVG (no canvas / WebGL)\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ===================================================================
+\section{Approach}
+Chosen: \textbf{CSS transforms + inline SVG}, animating only \texttt{transform} and
+\texttt{opacity} so all motion runs on the compositor. Rejected alternatives: a WebGL / canvas
+shader (a second always-on GPU context site-wide --- overkill, worse battery, conflicts with the
+``lazy-load 3D so it never blocks paint'' rule) and animated SVG filters / \texttt{feTurbulence}
+(CPU-heavy, hard to theme).
+
+% ===================================================================
+\section{Architecture}
+One client component, mounted once in the root layout.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{l Y}
+\toprule
+\textbf{Unit} & \textbf{Responsibility}\\
+\midrule
+\texttt{components/ambient-background.tsx} (\texttt{"use client"}) & The
+\texttt{fixed inset-0 -z-10 pointer-events-none} layer, \texttt{aria-hidden}. Owns the
+mouse-parallax effect and visibility rules. Returns \texttt{null} on \texttt{/admin*}.\\
+\texttt{components/nt-mark.tsx} & The traced NT monogram as a reusable inline SVG, tintable via
+\texttt{currentColor} / CSS vars. Swappable for an official SVG later.\\
+\texttt{app/globals.css} & New keyframes (\texttt{aurora-drift}, \texttt{gleam-sweep},
+\texttt{breathe}) and \texttt{.ambient-*} classes, theme-aware through existing tokens.\\
+\texttt{app/layout.tsx} & Mounts \texttt{<AmbientBackground />} as the first child of
+\texttt{<body>}.\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Layering (back to front)}
+\begin{enumerate}
+  \item \textbf{Base} --- existing \texttt{-{}-background} token (untouched; painted by \texttt{<body>}).
+  \item \textbf{Aurora} --- 2--3 large soft radial-gradient blobs, slowly drifting + breathing.
+  \item \textbf{Grid} --- the existing faint blueprint grid, full-page, edge-masked.
+  \item \textbf{Monogram watermark} --- large, centered NT, low opacity, gently breathing.
+  \item \textbf{Shine} --- a diagonal light band sweeping across the monogram every $\sim$6--8\,s,
+        \textbf{clipped to the letter shapes} via an SVG \texttt{clipPath} so the gleam only rides
+        the logo.
+\end{enumerate}
+
+The ambient layer lives at \texttt{-z-10} as a child of \texttt{<body>}. Per CSS paint order, a
+negative \texttt{z-index} child paints \emph{above} the body's own \texttt{bg-background} fill but
+\emph{below} all in-flow content --- so it is visible in transparent regions and correctly hidden
+behind opaque \texttt{bg-card} surfaces.
+
+\subsection{Mouse parallax}
+A single \texttt{pointermove} listener (throttled with \texttt{requestAnimationFrame}) writes
+normalized \texttt{-{}-mx} / \texttt{-{}-my} ($-1\ldots1$) CSS variables on the layer root. Each
+layer translates a different magnitude toward the cursor (monogram least, aurora most) for depth.
+The listener is \textbf{not attached} when \texttt{(hover: none)} (touch) or
+\texttt{prefers-reduced-motion: reduce}.
+
+% ===================================================================
+\section{Theme-aware palette}
+\begin{center}
+\begin{tabularx}{\textwidth}{l Y Y}
+\toprule
+\textbf{Layer} & \textbf{Dark} & \textbf{Light}\\
+\midrule
+Aurora & indigo \texttt{\#5C7CFA} + navy \texttt{\#1E2A44} & indigo \texttt{\#8AA0FF} + cool blue, softer\\
+Monogram fill & silver \texttt{\#C0C5CE}$\rightarrow$\texttt{\#E8EBF0}, $\sim$8\% & navy \texttt{\#1E2A44}$\rightarrow$\texttt{\#2D3A5C}, low opacity\\
+Gleam & bright silver / white & white / indigo\\
+Grid & existing \texttt{-{}-grid-line} (faint silver) & existing \texttt{-{}-grid-line} (faint navy)\\
+\bottomrule
+\end{tabularx}
+\end{center}
+Colors are driven by existing CSS custom properties, so the \texttt{.dark} class switch flips the
+whole background automatically.
+
+% ===================================================================
+\section{Integration adjustments}
+\begin{itemize}
+  \item \textbf{Home hero} (\texttt{src/app/page.tsx}): remove the now-redundant local
+        \texttt{.bg-grid} (the global grid covers it); keep the 3D crystal and a subtle local
+        \texttt{.bg-glow} for focal emphasis at the top of the hero.
+  \item \textbf{Admin} (\texttt{src/app/admin/(panel)/}): background suppressed via the
+        \texttt{usePathname} check in \texttt{ambient-background.tsx}.
+\end{itemize}
+
+% ===================================================================
+\section{Performance \& accessibility}
+\begin{itemize}
+  \item Animate \textbf{only} \texttt{transform} / \texttt{opacity}; \texttt{will-change} applied
+        sparingly and scoped.
+  \item \texttt{pointer-events: none} and \texttt{aria-hidden="true"} on the whole layer.
+  \item Full \texttt{prefers-reduced-motion} support: the existing global guard in
+        \texttt{globals.css} freezes animation; the parallax listener additionally self-disables.
+  \item No layout thrash, no per-frame React state, no new dependencies.
+\end{itemize}
+
+% ===================================================================
+\section{Testing}
+\begin{itemize}
+  \item Component render test (\texttt{ambient-background.test.tsx}) matching the existing
+        \texttt{navbar.test.tsx} pattern: asserts the layer renders \texttt{aria-hidden}, and
+        renders nothing on an \texttt{/admin} path (mocked \texttt{usePathname}).
+  \item Keep the green bar: \texttt{npm run build}, \texttt{npm run typecheck},
+        \texttt{npm run lint}, \texttt{npm test} all pass.
+  \item Manual: verify the shine sweep, aurora drift, and mouse parallax in both themes; confirm
+        the background disappears on \texttt{/admin} and that content readability is unaffected.
+\end{itemize}
+
+% ===================================================================
+\section{Asset note}
+The provided \texttt{public/logo.jpeg} is a raster JPEG on a black background --- it cannot be
+tinted or masked. We therefore \textbf{trace a clean transparent SVG} of the NT monogram for
+\texttt{nt-mark.tsx}. It will closely match the mark; an official SVG can be dropped in later
+without other changes.
+
+% ===================================================================
+\section{Build order}
+\begin{enumerate}
+  \item Add \texttt{nt-mark.tsx} (traced SVG monogram).
+  \item Add keyframes + \texttt{.ambient-*} classes to \texttt{globals.css} (theme-aware).
+  \item Build \texttt{ambient-background.tsx} (layers + parallax + \texttt{/admin} suppression).
+  \item Mount in \texttt{layout.tsx}; trim the home hero's redundant grid.
+  \item Add the render test; run the full green-bar suite.
+  \item Visual QA in both themes; tune opacity / timing.
+\end{enumerate}
+
+\end{document}
