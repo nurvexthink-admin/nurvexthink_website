@@ -62,6 +62,10 @@ Tables: `profiles`, `products`, `blog_posts`, `orders`. Storage: `product-images
 - **3D (R3F):** `frameloop="demand"`; mutate via `useFrame`+refs (never state in the loop);
   compressed textures (KTX2) + models (GLB/Draco); `useGLTF.preload()`; LOD via `<Detailed>`;
   dispose GPU resources; lazy-load 3D so it never blocks first paint; monitor with `r3f-perf`.
+- **Ambient background:** the site's ONE WebGL scene (the 3D logo watermark, lazy-loaded,
+  dpr capped at 1.5) — don't add more live canvases. Aurora/grid stay CSS `transform`/`opacity`
+  only; one rAF-throttled pointer listener for parallax, disabled on touch + reduced-motion.
+  Keep colours/opacity in theme tokens (the 3D scene itself stays theme-blind).
 
 Detailed rules live in `.claude/skills/nurvexthink-nextjs-perf` and
 `.claude/skills/nurvexthink-3d-perf`. The installed `supabase` and
@@ -99,3 +103,8 @@ SUPABASE_SERVICE_ROLE_KEY=        # server-side ONLY; never commit; set in Verce
 - `docs/superpowers/specs/` — design specs (start with the website design doc).
 - `.claude/skills/` — project-specific best-practice skills.
 - `brand/` — logo and brand assets.
+- `src/components/ambient-background.tsx` — site-wide animated background: the real logo,
+  extruded and slowly turning in **true 3D** as a watermark (`ambient-logo-3d.tsx`, traced
+  outlines in `logo-shapes.ts`), over drifting aurora + faint grid. Theme-aware, hidden on
+  `/admin`. Transparent logo source: `public/logo-mark.png` (black knocked out from
+  `public/logo.jpeg`); ambient tokens + keyframes: `src/app/globals.css`.

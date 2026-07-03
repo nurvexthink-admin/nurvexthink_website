@@ -5,7 +5,6 @@ import { Eyebrow, SectionHeading } from "@/components/section-heading";
 import { ServiceIcon } from "@/components/icon";
 import { ProductCard } from "@/components/product-card";
 import { BlogCard } from "@/components/blog-card";
-import { HeroCanvas } from "@/components/hero-canvas";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { processSteps, services, stats } from "@/lib/content";
@@ -22,12 +21,10 @@ export default async function HomePage() {
     <>
       {/* ---------------- Hero ---------------- */}
       <section className="relative overflow-hidden">
-        <div aria-hidden className="bg-grid mask-fade-y absolute inset-0" />
+        {/* Grid comes from the site-wide ambient background; keep a focal glow. */}
         <div aria-hidden className="bg-glow absolute inset-x-0 top-0 h-180" />
+        {/* The hero visual is the site-wide 3D logo watermark turning behind this copy. */}
         <Container className="relative flex min-h-[88vh] flex-col items-center justify-center gap-8 py-16 text-center">
-          <div className="relative h-64 w-full max-w-md sm:h-80">
-            <HeroCanvas />
-          </div>
           <div className="flex flex-col items-center gap-5">
             <Eyebrow>Software studio</Eyebrow>
             <h1 className="text-gradient font-heading text-5xl font-bold tracking-tight text-balance sm:text-7xl">

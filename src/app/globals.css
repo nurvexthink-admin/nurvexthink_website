@@ -23,6 +23,13 @@
   --radius: 0.75rem;
   --grid-line: rgba(30, 42, 68, 0.07);
 
+  /* Ambient background (light): real logo watermark, true colours (no tint). */
+  --amb-logo-opacity: 0.3;
+  --amb-logo-filter: none;
+  --amb-aurora-a: rgba(92, 124, 250, 0.18);
+  --amb-aurora-b: rgba(30, 42, 68, 0.13);
+  --amb-aurora-c: rgba(138, 160, 255, 0.16);
+
   --background: #f7f8fa;
   --foreground: #141c2e;
   --card: #ffffff;
@@ -59,6 +66,13 @@
 /* Dark theme — near-black, metallic silver text, navy depth, indigo accent. */
 .dark {
   --grid-line: rgba(232, 235, 240, 0.05);
+
+  /* Ambient background (dark): real logo watermark, lifted to read on black. */
+  --amb-logo-opacity: 0.34;
+  --amb-logo-filter: brightness(1.5);
+  --amb-aurora-a: rgba(92, 124, 250, 0.2);
+  --amb-aurora-b: rgba(30, 42, 68, 0.55);
+  --amb-aurora-c: rgba(138, 160, 255, 0.12);
 
   --background: #0a0a0b;
   --foreground: #e8ebf0;
@@ -192,6 +206,114 @@ h4 {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* ---- Ambient logo background ------------------------------------------ */
+
+/* Full-page fixed layer behind all content. Sits at -z-10 so it paints above
+   the body's own background fill but below every in-flow section. */
+.ambient-root {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Soft drifting aurora blobs. `translate` carries the mouse parallax so it
+   composes with the keyframe `transform` (drift + scale) rather than fighting it. */
+.ambient-aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+  transition: translate 0.5s ease-out;
+  will-change: transform, translate;
+}
+.ambient-aurora-a {
+  top: -12%;
+  left: 42%;
+  width: 60vw;
+  height: 60vw;
+  max-width: 820px;
+  max-height: 820px;
+  background: radial-gradient(circle, var(--amb-aurora-a), transparent 68%);
+  translate: calc(var(--amb-mx, 0) * 42px) calc(var(--amb-my, 0) * 42px);
+  animation: ambient-drift-a 26s ease-in-out infinite;
+}
+.ambient-aurora-b {
+  top: 18%;
+  left: -10%;
+  width: 52vw;
+  height: 52vw;
+  max-width: 720px;
+  max-height: 720px;
+  background: radial-gradient(circle, var(--amb-aurora-b), transparent 66%);
+  translate: calc(var(--amb-mx, 0) * 30px) calc(var(--amb-my, 0) * 30px);
+  animation: ambient-drift-b 32s ease-in-out infinite;
+}
+.ambient-aurora-c {
+  bottom: -16%;
+  right: -8%;
+  width: 48vw;
+  height: 48vw;
+  max-width: 680px;
+  max-height: 680px;
+  background: radial-gradient(circle, var(--amb-aurora-c), transparent 66%);
+  translate: calc(var(--amb-mx, 0) * 36px) calc(var(--amb-my, 0) * 36px);
+  animation: ambient-drift-c 38s ease-in-out infinite;
+}
+
+/* Faint blueprint grid (reuses .bg-grid image), full-page, edge-faded. */
+.ambient-grid {
+  position: absolute;
+  inset: -2px;
+  opacity: 0.55;
+  translate: calc(var(--amb-mx, 0) * 10px) calc(var(--amb-my, 0) * 10px);
+  transition: translate 0.5s ease-out;
+  -webkit-mask-image: radial-gradient(125% 125% at 50% 38%, black 42%, transparent 80%);
+  mask-image: radial-gradient(125% 125% at 50% 38%, black 42%, transparent 80%);
+}
+
+/* Centred watermark wrapper: the true-3D turntable renders inside (WebGL canvas
+   fills it). Parallax rides `translate` (keeping the -50% centring); size,
+   opacity, and the per-theme tint filter live here so the scene stays theme-blind. */
+.ambient-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(72vw, 860px);
+  aspect-ratio: 634 / 441;
+  translate: calc(-50% + var(--amb-mx, 0) * 18px) calc(-50% + var(--amb-my, 0) * 18px);
+  transition: translate 0.5s ease-out;
+  opacity: var(--amb-logo-opacity);
+  filter: var(--amb-logo-filter, none);
+}
+@keyframes ambient-drift-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-4%, 5%) scale(1.08);
+  }
+}
+@keyframes ambient-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(6%, -3%) scale(1.12);
+  }
+}
+@keyframes ambient-drift-c {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-5%, -4%) scale(1.1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
