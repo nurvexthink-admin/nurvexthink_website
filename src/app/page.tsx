@@ -5,6 +5,7 @@ import { Eyebrow, SectionHeading } from "@/components/section-heading";
 import { ServiceIcon } from "@/components/icon";
 import { ProductCard } from "@/components/product-card";
 import { BlogCard } from "@/components/blog-card";
+import { SocialMarquee } from "@/components/social-marquee";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { processSteps, services, stats } from "@/lib/content";
@@ -59,6 +60,9 @@ export default async function HomePage() {
           ))}
         </Container>
       </section>
+
+      {/* ---------------- Social marquee ---------------- */}
+      <SocialMarquee />
 
       {/* ---------------- Services ---------------- */}
       <section className="py-20 sm:py-28">
