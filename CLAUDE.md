@@ -44,8 +44,10 @@ by default (`dark` class on `<html>`), glassmorphism, metallic gradients.
 
 ## Data model (Supabase)
 
-Tables: `profiles`, `products`, `blog_posts`, `orders`. Storage: `product-images`,
-`blog-images`. See `docs/superpowers/specs/2026-06-30-nurvexthink-website-design.md` §5.
+Tables: `profiles`, `products`, `product_categories`, `product_features`,
+`product_blog_links`, `blog_posts`, `orders`. Storage: `product-images`, `blog-images`.
+See `docs/superpowers/specs/2026-06-30-nurvexthink-website-design.md` §5 and the products
+spec `2026-07-04-products-experience-design.md` §4.
 
 ## Security rules (non-negotiable)
 
