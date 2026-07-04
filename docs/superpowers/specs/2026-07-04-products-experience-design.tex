@@ -78,12 +78,12 @@
 }
 
 \vspace{1.6cm}
-{\Large\bfseries\color{navy} Products Experience --- Design Specification (rev 2)}\\[0.4cm]
-{\large\color{slate} Two-tier showcase (Quick View + technical page), related blogs, flexible admin}
+{\Large\bfseries\color{navy} Products Experience --- Design Specification (rev 3)}\\[0.4cm]
+{\large\color{slate} Two-tier showcase, feature blocks (image + explanation), related blogs, flexible admin}
 
 \vfill
 \begin{tabular}{rl}
-\textbf{Date:} & 2026-07-04 (rev 2, hardened after adversarial review)\\
+\textbf{Date:} & 2026-07-04 (rev 3: feature showcase; rev 2 hardened after review)\\
 \textbf{Status:} & Approved (design phase)\\
 \textbf{Owner:} & Fatima Abdul Raheem (CEO)\\
 \textbf{Depth decision:} & Content + presentation control\\
@@ -134,6 +134,8 @@ One-size-fits-all cards & Two-tier: Quick View for everyone, technical page for 
   \item Two-tier presentation: plain-language Quick View first; technical depth one click away.
   \item Public showcase that sells: filterable grid + rich detail pages linking to live apps.
   \item Products cross-link to related blog posts (and posts link back when the blog ships).
+  \item Every product can showcase its features visually --- picture + explanation blocks,
+        added and ordered from the admin.
   \item Admin reshapes the grid without a deploy, fills the generic tier fast, and can never
         leave a half-empty public page (validation on publish \textbf{and} on edits to
         published products).
@@ -187,6 +189,9 @@ One-size-fits-all cards & Two-tier: Quick View for everyone, technical page for 
 \begin{itemize}
   \item \textbf{Overview strip first} (cover, tagline, highlights) so non-technical
         visitors who land directly aren't lost.
+  \item \textbf{Feature showcase} --- each product feature as a picture + explanation block
+        (image, title, short text), rendered in admin-set order as alternating image/text
+        rows; hidden when a product has no features.
   \item Technical body: long description (Markdown), \textbf{Technical details} (Markdown),
         tech chips, gallery grid, CTAs (rules below).
   \item \textbf{Related posts}: cards for linked \emph{published} posts $\rightarrow$
@@ -222,6 +227,9 @@ One-size-fits-all cards & Two-tier: Quick View for everyone, technical page for 
             intro)}, \textbf{highlights list editor} (add/remove/drag-reorder, ``plain
             language'' helper text), category select, cover upload, live URL, lifecycle
             select (live/beta/soon), featured toggle.
+      \item \textbf{Features tab} \emph{(the detail page's showcase)}: repeating feature
+            rows --- image upload, title, explanation text; add/remove/drag-reorder.
+            Optional: products may publish with zero features.
       \item \textbf{Technical tab} \emph{(the detail page)}: long description (Markdown),
             technical details (Markdown), tech list, gallery uploads, repo URL, year.
       \item \textbf{SEO \& Links tab}: SEO description \emph{(search results)}, OG image
@@ -266,7 +274,7 @@ default 'Live'} (Live/Beta/Soon), \texttt{category text}, \texttt{tags text[]},
         \texttt{technical\_details}, \texttt{gallery text[]}, \texttt{sort\_order int}
         (backfilled 10, 20, 30\ldots{} by \texttt{created\_at} so the grid is stable and
         insertable), \texttt{seo\_description}, \texttt{og\_image}.
-  \item \texttt{product\_blog\_links} junction created.
+  \item \texttt{product\_blog\_links} junction and \texttt{product\_features} table created.
   \item Policy + trigger fixes from \S5.
 \end{enumerate}
 Seed data survives every step; \texttt{/products} renders identically before and after.
@@ -297,12 +305,19 @@ Seed data survives every step; \texttt{/products} renders identically before and
 \texttt{(product\_id, blog\_post\_id)} \(\cdot\) FKs \texttt{ON DELETE CASCADE}
 
 \medskip
+\textbf{\texttt{product\_features}} (new) --- \texttt{id uuid PK} \(\cdot\)
+\texttt{product\_id FK ON DELETE CASCADE} \(\cdot\) \texttt{title} \(\cdot\)
+\texttt{description} \emph{(the explanation shown beside the picture)} \(\cdot\)
+\texttt{image} \(\cdot\) \texttt{sort\_order} \(\cdot\) \texttt{created\_at}
+
+\medskip
 \textbf{\texttt{profiles}} --- already live; role-protection hardened (\S5).
 
 \subsection{Indexes}
 Existing kept; added: \texttt{products(category\_id)}, \texttt{products(sort\_order)},
 \texttt{products(lifecycle)}, \texttt{product\_categories(slug)},
-\texttt{product\_blog\_links(product\_id)}, \texttt{product\_blog\_links(blog\_post\_id)}.
+\texttt{product\_blog\_links(product\_id)}, \texttt{product\_blog\_links(blog\_post\_id)},
+\texttt{product\_features(product\_id, sort\_order)}.
 
 \subsection{RLS (default-deny, every table)}
 \begin{itemize}
@@ -314,6 +329,8 @@ Existing kept; added: \texttt{products(category\_id)}, \texttt{products(sort\_or
         published} (\texttt{EXISTS} on published product \textbf{and} published post) --- anon
         users cannot count posts attached to unreleased products or see draft-post UUIDs;
         admins full.
+  \item \texttt{product\_features}: public SELECT only when the parent product is
+        published (\texttt{EXISTS} on published parent); admins full.
   \item \texttt{profiles}: self-read; admins read all; \textbf{role changes owner-gated by
         trigger} (\S5).
   \item Storage \texttt{product-images}: unchanged from 0001.
@@ -351,7 +368,8 @@ Existing kept; added: \texttt{products(category\_id)}, \texttt{products(sort\_or
         transitions, publish-validation (incl.\ edits to published), category-delete guard.
   \item Component: card (link + intercepted click), grid filtering, Quick View
         (open/close/Back, \texttt{?p=} deep link, invalid \texttt{?p=} ignored), CTA rules
-        (live/soon/no-URL), editor tabs + labels, related-posts hidden when empty.
+        (live/soon/no-URL), editor tabs + labels, related-posts hidden when empty, feature
+        showcase renders in admin order / hides when empty.
   \item RLS impersonation: anon sees only published (incl.\ junction both-sides rule); anon
         writes fail; non-owner cannot change \texttt{profiles.role} (trigger test).
   \item Migration: 0003 dry-run against a copy of live data; \texttt{/products} renders
@@ -364,15 +382,16 @@ Existing kept; added: \texttt{products(category\_id)}, \texttt{products(sort\_or
 \section{Build order (three PRs)}
 \begin{enumerate}
   \item \textbf{\texttt{feat/products-schema}} --- migration 0003 (transform live schema:
-        categories, lifecycle/status/tech renames, new columns, junction, RLS updates, role
-        trigger, indexes, \texttt{sort\_order} backfill); typed query/view-model updates so
-        the current UX keeps rendering unchanged.
+        categories, lifecycle/status/tech renames, new columns, junction, \textbf{features
+        table}, RLS updates, role trigger, indexes, \texttt{sort\_order} backfill); typed
+        query/view-model updates so the current UX keeps rendering unchanged.
   \item \textbf{\texttt{feat/products-public}} --- two-tier UX: grid + Quick View
-        (\texttt{?p=} pushState deep links) + technical page with related posts, CTA rules,
-        SEO + sitemap, order-form CTA, empty states; public tier components prop-driven
-        (preview-ready).
-  \item \textbf{\texttt{feat/products-admin}} --- tiered CRUD editor with publish validation
-        (incl.\ published-edit revalidation), draft/preview/publish, drag reorder
+        (\texttt{?p=} pushState deep links) + technical page with \textbf{feature showcase},
+        related posts, CTA rules, SEO + sitemap, order-form CTA, empty states; public tier
+        components prop-driven (preview-ready).
+  \item \textbf{\texttt{feat/products-admin}} --- tiered CRUD editor (Quick View /
+        \textbf{Features} / Technical / SEO \& Links tabs) with publish validation (incl.\
+        published-edit revalidation), draft/preview/publish, drag reorder
         (\texttt{@dnd-kit}), categories manager, related-posts picker, duplicate action,
         image uploads, revalidation.
 \end{enumerate}

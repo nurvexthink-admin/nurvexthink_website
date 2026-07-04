@@ -1,6 +1,7 @@
 # Products Experience — Design Spec
 
-**Date:** 2026-07-04 (rev 2: two-tier interface + related blogs; hardened after adversarial
+**Date:** 2026-07-04 (rev 3: adds the per-product **feature showcase** — image + explanation
+blocks. Rev 2 added the two-tier interface + related blogs, hardened after adversarial
 review against the live schema)
 **Status:** Approved (design phase)
 **Owner:** Fatima Abdul Raheem (CEO)
@@ -44,6 +45,8 @@ Its gaps define our differentiators:
 - Two-tier presentation: plain-language Quick View first; technical depth one click away.
 - Public showcase that sells: filterable grid + rich detail pages linking to live apps.
 - Products cross-link to related blog posts (and posts link back when the blog ships).
+- Every product can showcase its features visually — picture + explanation blocks, added
+  and ordered from the admin.
 - Admin can reshape the grid without a deploy, fill the generic tier fast, and can never
   leave a half-empty public page (validation on publish **and** on edits to published
   products).
@@ -93,6 +96,9 @@ Its gaps define our differentiators:
 
 - **Overview strip first** (same info as Quick View: cover, tagline, highlights) so
   non-technical visitors who land here directly aren't lost.
+- **Feature showcase** — each product feature as a picture + explanation block (image,
+  title, short text), rendered in admin-set order as alternating image/text rows; the
+  section hides itself when a product has no features.
 - Then the technical body: long description (Markdown), **Technical details** section
   (architecture, stack decisions, implementation notes — Markdown), tech chips, gallery
   grid, CTAs (rules below).
@@ -128,9 +134,12 @@ Its gaps define our differentiators:
      **highlights list editor** (add / remove / drag-reorder short benefit bullets, with
      "plain language, no jargon" helper text), category select, cover image upload,
      live URL, lifecycle select (live / beta / soon), featured toggle.
-  2. **Technical tab** *(the detail page)* — long description (Markdown), technical
+  2. **Features tab** *(the detail page's showcase)* — repeating feature rows: image
+     upload, title, explanation text; add / remove / drag-reorder. Optional: products may
+     publish with zero features (the public section hides itself).
+  3. **Technical tab** *(the detail page)* — long description (Markdown), technical
      details (Markdown), tech list, gallery uploads, repo URL, year.
-  3. **SEO & Links tab** — SEO description *(search results)*, OG image *(social shares)*,
+  4. **SEO & Links tab** — SEO description *(search results)*, OG image *(social shares)*,
      and the **Related blog posts picker**: search posts by title, multi-select,
      drag-order; drafts selectable but flagged "won't show until the post is published".
 
@@ -182,7 +191,7 @@ Migration `0003` (single transaction):
    `technical_details text`, `gallery text[] default '{}'`, `sort_order int default 0`
    (backfilled 10, 20, 30… by current `created_at` order so the grid is stable and
    insertable), `seo_description text`, `og_image text`.
-6. `product_blog_links` junction created.
+6. `product_blog_links` junction and `product_features` table created.
 7. Policy + trigger fixes from §5.
 
 Seed data survives every step; `/products` renders identically before and after (PR 1
@@ -210,13 +219,19 @@ updates the queries/view-models to the new column names in the same PR).
 `blog_post_id uuid FK → blog_posts` · `sort_order int default 0` ·
 PK `(product_id, blog_post_id)` · both FKs `ON DELETE CASCADE`
 
+**`product_features`** (new) — `id uuid PK` ·
+`product_id uuid FK → products ON DELETE CASCADE` · `title text` ·
+`description text` *(the explanation shown beside the picture)* · `image text` ·
+`sort_order int default 0` · `created_at`
+
 **`profiles`** — already live; role-protection hardened (§5).
 
 ### Indexes
 
 Existing indexes kept; added: `products(category_id)`, `products(sort_order)`,
 `products(lifecycle)`, `product_categories(slug)`, `product_blog_links(product_id)`,
-`product_blog_links(blog_post_id)` — every column an RLS policy or common filter touches.
+`product_blog_links(blog_post_id)`, `product_features(product_id, sort_order)` — every
+column an RLS policy or common filter touches.
 
 ### RLS (default-deny, enabled on every table)
 
@@ -230,6 +245,9 @@ Existing indexes kept; added: `products(category_id)`, `products(sort_order)`,
   b.id = blog_post_id and b.status = 'published'))` — so anon users can't count posts
   attached to unreleased products or see draft-post UUIDs. The junction FK indexes keep
   this cheap. Admins full access.
+- `product_features`: public `SELECT` only when the parent product is published
+  (`EXISTS (select 1 from products p where p.id = product_id and
+  p.status = 'published')`); admins full access.
 - `profiles`: user reads own row; admins read all; **role changes owner-gated by trigger**
   (§5 — RLS alone cannot express column-level rules).
 - Storage `product-images`: unchanged from 0001 (public read; admin write).
@@ -269,7 +287,8 @@ Migrations are SQL files committed under `supabase/migrations/` and applied to p
 - Component: product card (link + intercepted click), grid filtering, Quick View (opens
   on click, closes on Esc/backdrop/Back, `?p=` deep link opens, invalid `?p=` ignored,
   "Full technical details" navigates), CTA rules (live / soon / no-URL states), editor
-  tier tabs + field→destination labels, related-posts section hidden when empty.
+  tier tabs + field→destination labels, related-posts section hidden when empty,
+  feature showcase renders in admin order / hides when a product has no features.
 - RLS: impersonation checklist — anon sees only published products/posts **and junction
   rows whose both sides are published**; anon writes fail; non-owner admin cannot change
   `profiles.role` (trigger test).
@@ -281,16 +300,17 @@ Migrations are SQL files committed under `supabase/migrations/` and applied to p
 ## 8. Build order (three PRs)
 
 1. **`feat/products-schema`** — migration 0003 (transform live schema per §4: categories,
-   lifecycle/status/tech renames, new columns, junction, RLS updates, role trigger,
-   indexes, sort_order backfill); typed query/view-model updates (`queries.ts`,
-   `content.ts`, card/detail props) so the current UX keeps rendering unchanged.
+   lifecycle/status/tech renames, new columns, junction, **features table**, RLS updates,
+   role trigger, indexes, sort_order backfill); typed query/view-model updates
+   (`queries.ts`, `content.ts`, card/detail props) so the current UX keeps rendering
+   unchanged.
 2. **`feat/products-public`** — two-tier UX: grid + Quick View dialog (`?p=` pushState
-   deep links) + `/products/[slug]` technical page with related posts, CTA rules, SEO +
-   sitemap, order-form CTA, empty states. Public tier components refactored to
-   prop-driven (preview-ready).
-3. **`feat/products-admin`** — tiered CRUD editor with publish validation (incl.
-   published-edit revalidation), draft/preview/publish, drag reorder (@dnd-kit),
-   categories manager, related-posts picker, duplicate action, image uploads,
-   revalidation.
+   deep links) + `/products/[slug]` technical page with **feature showcase**, related
+   posts, CTA rules, SEO + sitemap, order-form CTA, empty states. Public tier components
+   refactored to prop-driven (preview-ready).
+3. **`feat/products-admin`** — tiered CRUD editor (Quick View / **Features** / Technical /
+   SEO & Links tabs) with publish validation (incl. published-edit revalidation),
+   draft/preview/publish, drag reorder (@dnd-kit), categories manager, related-posts
+   picker, duplicate action, image uploads, revalidation.
 
 Each PR ships the full green bar (typecheck, lint, tests, build) + screenshots before merge.
