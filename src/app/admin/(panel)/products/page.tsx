@@ -46,24 +46,23 @@ export default async function AdminProductsPage() {
                     <div className="text-foreground font-medium">{p.name}</div>
                     <div className="text-muted-foreground font-mono text-xs">
                       /{p.slug}
-                      {p.category ? ` · ${p.category}` : ""}
                     </div>
                   </td>
-                  <td className="text-muted-foreground px-4 py-3">{p.status}</td>
+                  <td className="text-muted-foreground px-4 py-3 capitalize">{p.lifecycle}</td>
                   <td className="px-4 py-3">
                     <form action={toggleProductPublished}>
                       <input type="hidden" name="id" value={p.id} />
-                      <input type="hidden" name="current" value={String(p.published)} />
+                      <input type="hidden" name="current" value={String(p.status === "published")} />
                       <button
                         type="submit"
                         className={cn(
                           "rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 transition-colors ring-inset",
-                          p.published
+                          p.status === "published"
                             ? "bg-emerald-500/12 text-emerald-500 ring-emerald-500/20"
                             : "bg-muted text-muted-foreground ring-border",
                         )}
                       >
-                        {p.published ? "Published" : "Hidden"}
+                        {p.status === "published" ? "Published" : "Hidden"}
                       </button>
                     </form>
                   </td>

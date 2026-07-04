@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import type { ProductStatusRow } from "@/lib/supabase/types";
+import type { ProductRow } from "@/lib/supabase/types";
 import type { ProductFormState } from "@/app/admin/(panel)/products/actions";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,7 @@ export function ProductForm({
   action,
   submitLabel,
 }: {
-  product?: ProductStatusRow;
+  product?: ProductRow;
   action: (prev: ProductFormState, formData: FormData) => Promise<ProductFormState>;
   submitLabel: string;
 }) {
@@ -57,17 +57,17 @@ export function ProductForm({
         </label>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-3">
+      <div className="grid gap-5 sm:grid-cols-2">
         <label className={labelClass}>
-          Category
-          <input name="category" defaultValue={product?.category ?? ""} className={fieldClass} />
-        </label>
-        <label className={labelClass}>
-          Status
-          <select name="status" defaultValue={product?.status ?? "Live"} className={fieldClass}>
-            <option>Live</option>
-            <option>Beta</option>
-            <option>Soon</option>
+          Lifecycle
+          <select
+            name="lifecycle"
+            defaultValue={product?.lifecycle ?? "live"}
+            className={fieldClass}
+          >
+            <option value="live">Live</option>
+            <option value="beta">Beta</option>
+            <option value="soon">Soon</option>
           </select>
         </label>
         <label className={labelClass}>
@@ -93,10 +93,10 @@ export function ProductForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <label className={labelClass}>
-          Tags <span className="text-muted-foreground font-normal">(comma separated)</span>
+          Tech <span className="text-muted-foreground font-normal">(comma separated)</span>
           <input
-            name="tags"
-            defaultValue={(product?.tags ?? []).join(", ")}
+            name="tech"
+            defaultValue={(product?.tech ?? []).join(", ")}
             placeholder="Next.js, Realtime"
             className={fieldClass}
           />
@@ -117,11 +117,16 @@ export function ProductForm({
           />
           Featured
         </label>
+        <input
+          type="hidden"
+          name="existing_published_at"
+          value={product?.published_at ?? ""}
+        />
         <label className="flex items-center gap-2 text-sm font-medium">
           <input
             type="checkbox"
             name="published"
-            defaultChecked={product?.published ?? false}
+            defaultChecked={product?.status === "published"}
             className="size-4"
           />
           Published (visible on the site)

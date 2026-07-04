@@ -1,10 +1,10 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import type { ProductStatusRow, BlogPostRow, OrderRow } from "@/lib/supabase/types";
+import type { ProductRow, BlogPostRow, OrderRow } from "@/lib/supabase/types";
 
 // These run as the logged-in admin, so the "admin reads all" RLS policies return
 // every row (including unpublished products and draft posts).
 
-export async function listProductsAdmin(): Promise<ProductStatusRow[]> {
+export async function listProductsAdmin(): Promise<ProductRow[]> {
   const supabase = await createServerSupabaseClient();
   const { data } = await supabase
     .from("products")
@@ -13,7 +13,7 @@ export async function listProductsAdmin(): Promise<ProductStatusRow[]> {
   return data ?? [];
 }
 
-export async function getProductAdmin(id: string): Promise<ProductStatusRow | null> {
+export async function getProductAdmin(id: string): Promise<ProductRow | null> {
   const supabase = await createServerSupabaseClient();
   const { data } = await supabase.from("products").select("*").eq("id", id).maybeSingle();
   return data ?? null;

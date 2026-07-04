@@ -7,26 +7,29 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 export type ProductFormState = { error?: string };
 
 function parseForm(formData: FormData) {
-  const tags = String(formData.get("tags") ?? "")
+  const tech = String(formData.get("tech") ?? "")
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
-  const status = String(formData.get("status") ?? "Live");
+  const lifecycleRaw = String(formData.get("lifecycle") ?? "live").toLowerCase();
+  const published = formData.get("published") === "on";
+  const existingPublishedAt =
+    String(formData.get("existing_published_at") ?? "").trim() || null;
   return {
     slug: String(formData.get("slug") ?? "")
       .trim()
       .toLowerCase(),
     name: String(formData.get("name") ?? "").trim(),
-    category: String(formData.get("category") ?? "").trim() || null,
     summary: String(formData.get("summary") ?? "").trim() || null,
     description: String(formData.get("description") ?? "").trim() || null,
     live_url: String(formData.get("live_url") ?? "").trim() || null,
     year: String(formData.get("year") ?? "").trim() || null,
-    status: (["Live", "Beta", "Soon"].includes(status) ? status : "Live") as
-      "Live" | "Beta" | "Soon",
-    tags,
+    lifecycle: (["live", "beta", "soon"].includes(lifecycleRaw) ? lifecycleRaw : "live") as
+      "live" | "beta" | "soon",
+    tech,
     featured: formData.get("featured") === "on",
-    published: formData.get("published") === "on",
+    status: (published ? "published" : "draft") as "draft" | "published",
+    published_at: published ? (existingPublishedAt ?? new Date().toISOString()) : existingPublishedAt,
   };
 }
 
@@ -75,6 +78,17 @@ export async function toggleProductPublished(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const next = formData.get("current") !== "true";
   const supabase = await createServerSupabaseClient();
-  await supabase.from("products").update({ published: next }).eq("id", id);
+  const { data: row } = await supabase
+    .from("products")
+    .select("published_at")
+    .eq("id", id)
+    .maybeSingle();
+  await supabase
+    .from("products")
+    .update({
+      status: next ? "published" : "draft",
+      published_at: next ? (row?.published_at ?? new Date().toISOString()) : row?.published_at,
+    })
+    .eq("id", id);
   revalidateAll();
 }

@@ -1,26 +1,60 @@
 /**
  * Database types for the NurvexThink Supabase schema.
- * Mirrors supabase/migrations/0001_initial_schema.sql. If you change the schema,
+ * Mirrors supabase/migrations/0001–0003. If you change the schema,
  * update this file (or regenerate with `supabase gen types typescript`).
  */
 
-export type ProductStatusRow = {
+export type ProductRow = {
   id: string;
   slug: string;
   name: string;
-  category: string | null;
+  tagline: string | null;
   summary: string | null;
+  highlights: string[];
   description: string | null;
+  technical_details: string | null;
   cover_image: string | null;
+  gallery: string[];
+  category_id: string | null;
+  /** Denormalized on select via `product_categories(name)` join; not a column. */
+  category_name?: string | null;
+  tech: string[];
+  lifecycle: "live" | "beta" | "soon";
+  year: string | null;
   live_url: string | null;
   repo_url: string | null;
-  tags: string[];
-  year: string | null;
-  status: "Live" | "Beta" | "Soon";
   featured: boolean;
-  published: boolean;
+  sort_order: number;
+  status: "draft" | "published";
+  seo_description: string | null;
+  og_image: string | null;
+  published_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type ProductCategoryRow = {
+  id: string;
+  name: string;
+  slug: string;
+  sort_order: number;
+  created_at: string;
+};
+
+export type ProductFeatureRow = {
+  id: string;
+  product_id: string;
+  title: string;
+  description: string | null;
+  image: string | null;
+  sort_order: number;
+  created_at: string;
+};
+
+export type ProductBlogLinkRow = {
+  product_id: string;
+  blog_post_id: string;
+  sort_order: number;
 };
 
 export type BlogPostRow = {
@@ -70,9 +104,33 @@ export type Database = {
         Relationships: [];
       };
       products: {
-        Row: ProductStatusRow;
-        Insert: { slug: string; name: string } & Partial<Omit<ProductStatusRow, "slug" | "name">>;
-        Update: Partial<ProductStatusRow>;
+        Row: ProductRow;
+        Insert: { slug: string; name: string } & Partial<
+          Omit<ProductRow, "slug" | "name" | "category_name">
+        >;
+        Update: Partial<Omit<ProductRow, "category_name">>;
+        Relationships: [];
+      };
+      product_categories: {
+        Row: ProductCategoryRow;
+        Insert: { name: string; slug: string } & Partial<
+          Omit<ProductCategoryRow, "name" | "slug">
+        >;
+        Update: Partial<ProductCategoryRow>;
+        Relationships: [];
+      };
+      product_features: {
+        Row: ProductFeatureRow;
+        Insert: { product_id: string; title: string } & Partial<
+          Omit<ProductFeatureRow, "product_id" | "title">
+        >;
+        Update: Partial<ProductFeatureRow>;
+        Relationships: [];
+      };
+      product_blog_links: {
+        Row: ProductBlogLinkRow;
+        Insert: ProductBlogLinkRow;
+        Update: Partial<ProductBlogLinkRow>;
         Relationships: [];
       };
       blog_posts: {
