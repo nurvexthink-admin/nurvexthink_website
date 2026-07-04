@@ -30,7 +30,7 @@
 
 % ---------- hyperref ----------
 \hypersetup{
-  pdftitle={NurvexThink -- Products Experience Design Spec},
+  pdftitle={NurvexThink -- Products Experience Design Spec (rev 2)},
   pdfauthor={NurvexThink},
   colorlinks=true, linkcolor=navy, urlcolor=slate, citecolor=navy
 }
@@ -78,12 +78,12 @@
 }
 
 \vspace{1.6cm}
-{\Large\bfseries\color{navy} Products Experience --- Design Specification}\\[0.4cm]
-{\large\color{slate} Public showcase + flexible admin: content AND presentation control}
+{\Large\bfseries\color{navy} Products Experience --- Design Specification (rev 2)}\\[0.4cm]
+{\large\color{slate} Two-tier showcase (Quick View + technical page), related blogs, flexible admin}
 
 \vfill
 \begin{tabular}{rl}
-\textbf{Date:} & 2026-07-04\\
+\textbf{Date:} & 2026-07-04 (rev 2, hardened after adversarial review)\\
 \textbf{Status:} & Approved (design phase)\\
 \textbf{Owner:} & Fatima Abdul Raheem (CEO)\\
 \textbf{Depth decision:} & Content + presentation control\\
@@ -96,17 +96,24 @@
 
 % ===================================================================
 \section{Overview}
-Build the \textbf{products experience} for the NurvexThink main site: a public product
-showcase (grid + real per-product detail pages) driven end-to-end by a flexible admin. The
-admin controls both \textbf{what} shows (content, media) and \textbf{how} it's arranged
-(order, pinning, categories, publish state) --- with drafts and preview, so nothing goes
-live by accident.
+Build the \textbf{products experience}: a public product showcase driven end-to-end by a
+flexible admin. The showcase is \textbf{two-tier by design} --- an approachable \textbf{Quick
+View} (a box that opens on the same page, plain language, for everyone) and a \textbf{full
+technical page} (for technical readers). Each product can also reference \textbf{related blog
+posts}, so readers flow from product $\rightarrow$ deep-dive articles.
+
+The admin controls both \textbf{what} shows (content, media, related posts) and \textbf{how}
+it's arranged (order, pinning, categories, publish state) --- with drafts and preview. The
+editor is organized around the two public tiers so the generic tier is quick and foolproof to
+fill.
+
+\textbf{Ground truth:} the original site-spec schema is already live on project
+\texttt{axbsghyqhhdaiylcksbv} (migrations \texttt{0001}+\texttt{0002}: \texttt{profiles},
+\texttt{products}, \texttt{blog\_posts}, \texttt{orders}, storage policies, admin auth,
+seeded products). This spec therefore defines a \textbf{data-preserving migration} of that
+schema, never a fresh install.
 
 \subsection{Why this shape (from the 2026-07-03 admin-flexibility research)}
-We reviewed a reference admin (Fatima's portfolio) end-to-end. Its strengths --- every admin
-field labeled with its public destination; instant content propagation --- are adopted here.
-Its gaps define our differentiators:
-
 \begin{center}
 \begin{tabularx}{\textwidth}{Y Y}
 \toprule
@@ -116,151 +123,258 @@ No ordering/pinning & \texttt{sort\_order} + drag-to-reorder; featured pinning\\
 Everything live on save & Draft $\rightarrow$ Published workflow + preview\\
 Hardcoded category dropdown & Admin-managed categories table\\
 No detail pages / SEO & \texttt{/products/[slug]} pages with per-product SEO\\
-No live preview & Preview renders the real public page from draft data\\
+No live preview & Preview renders the real public pages from draft data\\
+One-size-fits-all cards & Two-tier: Quick View for everyone, technical page for devs\\
 \bottomrule
 \end{tabularx}
 \end{center}
 
 \subsection{Goals}
 \begin{itemize}
+  \item Two-tier presentation: plain-language Quick View first; technical depth one click away.
   \item Public showcase that sells: filterable grid + rich detail pages linking to live apps.
-  \item Admin can reshape the grid (order, featured, categories) without a deploy.
+  \item Products cross-link to related blog posts (and posts link back when the blog ships).
+  \item Admin reshapes the grid without a deploy, fills the generic tier fast, and can never
+        leave a half-empty public page (validation on publish \textbf{and} on edits to
+        published products).
   \item Safe publishing: draft/preview/publish; nothing accidental.
-  \item Foundation (schema, RLS, auth) reusable by blog + orders later.
+  \item Schema evolution that keeps today's six live seed products rendering throughout.
 \end{itemize}
 
 \subsection{Non-goals (deferred)}
 \begin{itemize}
-  \item Blog admin \& orders inbox (separate specs; this builds their foundation).
+  \item Blog \textbf{admin} \& orders inbox (separate specs; \texttt{blog\_posts} already
+        exists and the product$\leftrightarrow$post links ship here).
   \item Payments, client accounts.
-  \item Full site-builder (home hero/stats editing from admin) --- revisit after products ship.
+  \item Full site-builder --- revisit after products ship.
 \end{itemize}
 
 % ===================================================================
 \section{Public UX}
 \subsection{\texttt{/products} --- showcase grid}
 \begin{itemize}
-  \item Card: cover image, name, summary, category pill, up to $\sim$4 tech chips, Featured badge.
+  \item Card: cover image, name, \textbf{tagline}, category pill, lifecycle badge
+        (\emph{Beta}/\emph{Soon} when applicable), Featured badge. Tech chips live in the
+        technical tier (intentionally replaces today's tag chips on cards).
   \item Filter pills from the categories table (+ ``All''); empty categories hidden.
-  \item Order: \texttt{featured DESC, sort\_order ASC} --- exactly what the admin arranged.
-  \item Server Component; data via the Supabase server client; \texttt{revalidatePath} on
-        admin mutations keeps it fresh without polling.
+  \item Order: \texttt{featured DESC, sort\_order ASC, created\_at DESC} (deterministic).
+  \item \textbf{Cards are real links} (\texttt{<a href="/products/[slug]">}) whose click is
+        intercepted to open the Quick View --- crawlers and no-JS users get the detail page
+        (SEO-safe); JS users get the overlay.
+  \item Server Component; \texttt{revalidatePath} on admin mutations keeps it fresh.
 \end{itemize}
 
-\subsection{\texttt{/products/[slug]} --- detail page}
+\subsection{Quick View --- tier 1, for everyone}
 \begin{itemize}
-  \item Hero: cover image, name, one-line summary, category, CTA row (\textbf{Open live app},
-        \textbf{View repo} when set).
-  \item Body: long description (Markdown rendered), tech stack chips, gallery grid, and a
-        \textbf{``Request something like this''} CTA linking to \texttt{/order?ref=<slug>}.
-  \item SEO: \texttt{generateMetadata} from \texttt{seo\_description} (fallback: summary) +
-        OG image (\texttt{og\_image} fallback: cover). Published products only; drafts 404
-        publicly.
+  \item Dialog over the grid: cover, name, category, \textbf{tagline}, \textbf{highlights}
+        (3--6 plain-language bullets), CTA row (rules below) + \textbf{Full technical details
+        $\rightarrow$} (real navigation to \texttt{/products/[slug]}), plus up to two
+        related-post chips.
+  \item \textbf{URL mechanics:} opening writes \texttt{?p=<slug>} via
+        \texttt{history.pushState} (no RSC refetch); open state hydrates client-side from
+        \texttt{useSearchParams}, so the page stays cacheable. Back/Esc/backdrop close.
+        Direct visits to \texttt{/products?p=<slug>} open the grid with the box open.
+        Unknown, draft, or malformed \texttt{?p=} is \textbf{silently ignored}.
+        \texttt{/products} keeps \texttt{rel="canonical"} to itself regardless of
+        \texttt{?p=}; every published product appears in the sitemap as
+        \texttt{/products/[slug]}.
+  \item No extra fetch: quick-view fields ride the grid query. Focus-trapped,
+        \texttt{role="dialog"}, labeled by product name.
+  \item Content rule: \textbf{zero jargon} --- admin fields are labeled accordingly.
+\end{itemize}
+
+\subsection{\texttt{/products/[slug]} --- tier 2, the technical page}
+\begin{itemize}
+  \item \textbf{Overview strip first} (cover, tagline, highlights) so non-technical
+        visitors who land directly aren't lost.
+  \item Technical body: long description (Markdown), \textbf{Technical details} (Markdown),
+        tech chips, gallery grid, CTAs (rules below).
+  \item \textbf{Related posts}: cards for linked \emph{published} posts $\rightarrow$
+        \texttt{/blog/[slug]}; hidden when none. (Blog pages get a ``Built product'' backlink
+        when the blog admin ships.)
+  \item \textbf{``Request something like this''} CTA $\rightarrow$ \texttt{/order?ref=<slug>}.
+  \item SEO: \texttt{generateMetadata} from \texttt{seo\_description} (fallback:
+        tagline+summary) + OG image (fallback: cover). Drafts 404 publicly.
+\end{itemize}
+
+\subsection{CTA rules (both tiers)}
+\begin{itemize}
+  \item \texttt{live\_url} set \textbf{and} \texttt{lifecycle != 'soon'} $\rightarrow$
+        primary \textbf{Open live app}.
+  \item \texttt{lifecycle = 'soon'} or \texttt{live\_url} empty $\rightarrow$ disabled
+        \textbf{Coming soon} state (never a dead link). \texttt{live\_url} stays optional at
+        publish time by design.
+  \item \texttt{repo\_url} set $\rightarrow$ secondary \textbf{View repo} (technical page).
 \end{itemize}
 
 % ===================================================================
 \section{Admin UX (\texttt{/admin/products})}
 \begin{itemize}
-  \item \textbf{List view:} cover thumb, name, category, status badge (Draft/Published),
-        Featured star, \textbf{drag-to-reorder} (persists \texttt{sort\_order}); filter by
-        status/category.
-  \item \textbf{Editor:} every field labeled with its public destination --- e.g.\ ``Summary
-        \emph{(product card)}'', ``Long description \emph{(detail page)}'', ``SEO description
-        \emph{(search results)}''. Fields: name, slug (auto from name, editable), summary,
-        long description (Markdown), category select, tech list, cover image upload, gallery
-        uploads, live URL, repo URL, featured toggle, SEO description, OG image. Buttons:
-        \textbf{Save draft} \(\cdot\) \textbf{Preview} \(\cdot\) \textbf{Publish} (and
-        Unpublish on published items).
-  \item \textbf{Preview:} admin-only route rendering the \emph{actual} public detail-page
-        component from draft data (\texttt{/admin/products/[id]/preview}).
-  \item \textbf{Categories manager:} add / rename / delete / reorder. Delete blocked while
-        products reference the category (reassign first).
-  \item Uploads go to the \texttt{product-images} Storage bucket (public read, admin write).
+  \item \textbf{List view:} cover thumb, name, category, status badge, lifecycle, Featured
+        star, \textbf{drag-to-reorder} (persists \texttt{sort\_order}); filter by
+        status/category; \textbf{Duplicate} action. The list groups featured items first to
+        mirror public order; \textbf{reordering is disabled while a filter is active}
+        (positions are global).
+  \item \textbf{Editor --- organized by audience tier} (tabs mirroring the public surfaces):
+    \begin{enumerate}
+      \item \textbf{Quick View tab} \emph{(the box everyone sees first)}: name, slug (auto,
+            editable), tagline \emph{(card + quick view headline)}, summary \emph{(quick view
+            intro)}, \textbf{highlights list editor} (add/remove/drag-reorder, ``plain
+            language'' helper text), category select, cover upload, live URL, lifecycle
+            select (live/beta/soon), featured toggle.
+      \item \textbf{Technical tab} \emph{(the detail page)}: long description (Markdown),
+            technical details (Markdown), tech list, gallery uploads, repo URL, year.
+      \item \textbf{SEO \& Links tab}: SEO description \emph{(search results)}, OG image
+            \emph{(social shares)}, \textbf{Related blog posts picker} (search, multi-select,
+            drag-order; drafts selectable but flagged).
+    \end{enumerate}
+  \item \textbf{Publish validation} --- Quick View tier must be complete (name, tagline,
+        summary, $\geq$3 highlights, cover, category) for a product to be \textbf{or remain}
+        published: Publish enables only when valid; \textbf{saving edits to a published
+        product re-runs the validation} (invalid save blocked, with \emph{Unpublish \& save
+        as draft} offered); drafts save anytime.
+  \item \textbf{Preview} (admin-only): renders the \emph{actual} public components for both
+        tiers from the \textbf{last saved draft} (save-first;
+        \texttt{/admin/products/[id]/preview} fetches with the admin client). Public tier
+        components are \textbf{pure/prop-driven}; routes fetch and pass data in.
+  \item \textbf{Duplicate} semantics: new \textbf{draft}; slug \texttt{-copy}/\texttt{-copy-2}
+        with uniqueness retry; \texttt{featured=false}; \texttt{sort\_order} = end; links
+        copied; \textbf{image URLs copied by reference} (shared Storage objects --- future
+        image-cleanup work must check referrers; flagged).
+  \item \textbf{Categories manager:} add/rename/delete/reorder; delete blocked while
+        referenced (reassign first).
+  \item Uploads $\rightarrow$ \texttt{product-images} bucket (policies already live from 0001).
 \end{itemize}
 
 % ===================================================================
 \section{Data model (Supabase)}
-\subsection{\texttt{product\_categories} (new)}
-\texttt{id uuid PK} \(\cdot\) \texttt{name text} \(\cdot\) \texttt{slug text unique}
-\(\cdot\) \texttt{sort\_order int} \(\cdot\) \texttt{created\_at}
+\subsection{Migration path --- \texttt{0003} transforms the live schema (data-preserving)}
+The DB already holds \texttt{products} with \texttt{published bool}, \texttt{status text
+default 'Live'} (Live/Beta/Soon), \texttt{category text}, \texttt{tags text[]},
+\texttt{year text}, and six seeded rows. Migration \texttt{0003} (single transaction):
+\begin{enumerate}
+  \item \texttt{product\_categories} created; distinct existing \texttt{category} strings
+        inserted; \texttt{category\_id} FK added + backfilled by name; old text column dropped.
+  \item Existing \texttt{status} \textbf{renamed to \texttt{lifecycle}}, values lowercased,
+        \texttt{check in ('live','beta','soon')}.
+  \item New \texttt{status check in ('draft','published')} derived from \texttt{published}
+        (\texttt{true} $\rightarrow$ \texttt{'published'}); \texttt{published\_at} backfilled;
+        \texttt{published bool} dropped. (CHECK added \textbf{after} backfill --- adding it
+        first would fail against existing rows.)
+  \item \texttt{tags} \textbf{renamed to \texttt{tech}}.
+  \item New columns: \texttt{tagline}, \texttt{highlights text[]},
+        \texttt{technical\_details}, \texttt{gallery text[]}, \texttt{sort\_order int}
+        (backfilled 10, 20, 30\ldots{} by \texttt{created\_at} so the grid is stable and
+        insertable), \texttt{seo\_description}, \texttt{og\_image}.
+  \item \texttt{product\_blog\_links} junction created.
+  \item Policy + trigger fixes from \S5.
+\end{enumerate}
+Seed data survives every step; \texttt{/products} renders identically before and after.
 
-\subsection{\texttt{products} (revised from the 2026-06-30 site spec)}
-\texttt{id uuid PK} \(\cdot\) \texttt{slug text unique} \(\cdot\) \texttt{name text}
-\(\cdot\) \texttt{summary text} \(\cdot\) \texttt{description text} (Markdown) \(\cdot\)
-\texttt{cover\_image text} \(\cdot\) \texttt{gallery text[]} \(\cdot\)
-\texttt{category\_id uuid FK} (nullable) \(\cdot\) \texttt{tech text[]} \(\cdot\)
-\texttt{live\_url text} \(\cdot\) \texttt{repo\_url text} \(\cdot\)
-\texttt{featured bool default false} \(\cdot\) \texttt{sort\_order int default 0} \(\cdot\)
-\texttt{status text check in ('draft','published') default 'draft'} (replaces the earlier
-\texttt{published bool}) \(\cdot\) \texttt{seo\_description text} \(\cdot\)
-\texttt{og\_image text} \(\cdot\) \texttt{published\_at timestamptz} \(\cdot\)
-\texttt{created\_at} \(\cdot\) \texttt{updated\_at}
+\subsection{Final shapes}
+\textbf{\texttt{product\_categories}} --- \texttt{id uuid PK} \(\cdot\) \texttt{name}
+\(\cdot\) \texttt{slug unique} \(\cdot\) \texttt{sort\_order} \(\cdot\) \texttt{created\_at}
 
-\subsection{\texttt{profiles} (from the site spec, built here)}
-\texttt{id uuid PK = auth.users.id} \(\cdot\) \texttt{email} \(\cdot\) \texttt{full\_name}
-\(\cdot\) \texttt{role text check in ('owner','admin')} \(\cdot\) \texttt{created\_at}
+\medskip
+\textbf{\texttt{products}} --- \texttt{id uuid PK} \(\cdot\) \texttt{slug unique} \(\cdot\)
+\texttt{name} \(\cdot\) \texttt{tagline} \emph{(quick-view headline)} \(\cdot\)
+\texttt{summary} \emph{(quick-view intro)} \(\cdot\) \texttt{highlights text[]}
+\emph{(quick-view bullets)} \(\cdot\) \texttt{description} (Markdown) \(\cdot\)
+\texttt{technical\_details} (Markdown) \(\cdot\) \texttt{cover\_image} \(\cdot\)
+\texttt{gallery text[]} \(\cdot\) \texttt{category\_id FK} (nullable) \(\cdot\)
+\texttt{tech text[]} \(\cdot\) \texttt{lifecycle check in ('live','beta','soon')} \(\cdot\)
+\texttt{year} \(\cdot\) \texttt{live\_url} \(\cdot\) \texttt{repo\_url} \(\cdot\)
+\texttt{featured bool} \(\cdot\) \texttt{sort\_order int} \(\cdot\)
+\texttt{status check in ('draft','published')} \(\cdot\) \texttt{seo\_description}
+\(\cdot\) \texttt{og\_image} \(\cdot\) \texttt{published\_at} \(\cdot\) timestamps
+
+\medskip
+\textbf{\texttt{blog\_posts}} --- already live (0001/0002); unchanged here.
+
+\medskip
+\textbf{\texttt{product\_blog\_links}} --- \texttt{product\_id FK} \(\cdot\)
+\texttt{blog\_post\_id FK} \(\cdot\) \texttt{sort\_order} \(\cdot\) PK
+\texttt{(product\_id, blog\_post\_id)} \(\cdot\) FKs \texttt{ON DELETE CASCADE}
+
+\medskip
+\textbf{\texttt{profiles}} --- already live; role-protection hardened (\S5).
 
 \subsection{Indexes}
-\texttt{products(status)}, \texttt{products(featured)}, \texttt{products(category\_id)},
-\texttt{products(sort\_order)}, \texttt{products(slug)},
-\texttt{product\_categories(slug)}, \texttt{profiles(role)} --- every column an RLS policy
-or common filter touches.
+Existing kept; added: \texttt{products(category\_id)}, \texttt{products(sort\_order)},
+\texttt{products(lifecycle)}, \texttt{product\_categories(slug)},
+\texttt{product\_blog\_links(product\_id)}, \texttt{product\_blog\_links(blog\_post\_id)}.
 
-\subsection{RLS (default-deny, enabled on every table)}
+\subsection{RLS (default-deny, every table)}
 \begin{itemize}
-  \item \texttt{products}: public SELECT where \texttt{status = 'published'}; admins (via
-        \texttt{profiles.role in ('owner','admin')}) full access.
-  \item \texttt{product\_categories}: public SELECT; admins full access.
-  \item \texttt{profiles}: user reads own row; admins read all; only owners change roles.
-  \item Storage \texttt{product-images}: public read; write restricted to authenticated admins.
+  \item \texttt{products}: public SELECT where \texttt{status='published'} (policy updated
+        from the old bool); admins full.
+  \item \texttt{product\_categories}: public SELECT; admins full.
+  \item \texttt{blog\_posts}: unchanged.
+  \item \texttt{product\_blog\_links}: public SELECT \textbf{only when both sides are
+        published} (\texttt{EXISTS} on published product \textbf{and} published post) --- anon
+        users cannot count posts attached to unreleased products or see draft-post UUIDs;
+        admins full.
+  \item \texttt{profiles}: self-read; admins read all; \textbf{role changes owner-gated by
+        trigger} (\S5).
+  \item Storage \texttt{product-images}: unchanged from 0001.
 \end{itemize}
-
-Migrations are SQL files committed under \texttt{supabase/migrations/} and applied to
-project \texttt{axbsghyqhhdaiylcksbv} via the Supabase SQL editor or CLI.
 
 % ===================================================================
 \section{Auth \& guarding}
 \begin{itemize}
-  \item Supabase Auth email/password for the three admin accounts.
-  \item \texttt{/admin/login} public; all other \texttt{/admin/*} routes guarded server-side
-        (\texttt{@supabase/ssr} session + \texttt{profiles.role} check in the admin layout).
-  \item \texttt{service\_role} key never leaves the server; mutations run through Server
-        Actions that re-verify the admin session.
+  \item Supabase Auth email/password (already live); \texttt{/admin/login} + guarded panel
+        layout reused.
+  \item \textbf{Privilege-escalation fix (0003):} the 0001 self-update policy lets any
+        signed-in user set their own \texttt{role}. 0003 adds a \texttt{BEFORE UPDATE}
+        trigger on \texttt{profiles} rejecting \texttt{role} changes unless the caller is an
+        \texttt{owner} (a trigger, not RLS, because RLS is row-granular and cannot see which
+        column changed).
+  \item \texttt{service\_role} never leaves the server; Server Actions re-verify the session.
 \end{itemize}
 
 % ===================================================================
 \section{Performance}
 \begin{itemize}
-  \item Server Components throughout; the admin's interactive pieces (drag list, editor
-        form, uploads) are client leaves.
-  \item Public pages cached; admin mutations call \texttt{revalidatePath('/products')}
-        (+ the detail path), so publishing is instant without polling.
-  \item \texttt{next/image} everywhere; drag-and-drop via native HTML5 DnD (no new
-        dependency unless it proves insufficient --- then \texttt{@dnd-kit}).
+  \item Server Components throughout; client leaves only where interactive (Quick View
+        dialog, drag list, editor, uploads).
+  \item Quick View: no extra request; \texttt{pushState}-only open/close (no RSC refetch).
+  \item Public pages cached; mutations call \texttt{revalidatePath} --- publish is instant.
+  \item \texttt{next/image} everywhere.
+  \item Drag-and-drop: \texttt{@dnd-kit} (keyboard + touch accessible, which native HTML5
+        DnD lacks). The one new dependency.
 \end{itemize}
 
 % ===================================================================
 \section{Testing}
 \begin{itemize}
-  \item Unit: slug generation, ordering logic, status transitions, category-delete guard.
-  \item Component: product card, grid filtering, editor field$\rightarrow$destination labels.
-  \item RLS: impersonation checklist (anon sees only published; admin sees all; anon writes
-        fail).
-  \item Manual: draft $\rightarrow$ preview $\rightarrow$ publish $\rightarrow$ appears
-        publicly; reorder reflects on \texttt{/products}; unpublish 404s the detail page.
+  \item Unit: slug generation + duplicate-suffix retry, ordering tiebreaks, status
+        transitions, publish-validation (incl.\ edits to published), category-delete guard.
+  \item Component: card (link + intercepted click), grid filtering, Quick View
+        (open/close/Back, \texttt{?p=} deep link, invalid \texttt{?p=} ignored), CTA rules
+        (live/soon/no-URL), editor tabs + labels, related-posts hidden when empty.
+  \item RLS impersonation: anon sees only published (incl.\ junction both-sides rule); anon
+        writes fail; non-owner cannot change \texttt{profiles.role} (trigger test).
+  \item Migration: 0003 dry-run against a copy of live data; \texttt{/products} renders
+        identically pre/post.
+  \item Manual: draft $\rightarrow$ preview (both tiers) $\rightarrow$ publish; reorder
+        reflects publicly; unpublish 404s the detail page.
 \end{itemize}
 
 % ===================================================================
 \section{Build order (three PRs)}
 \begin{enumerate}
-  \item \textbf{\texttt{feat/backend-foundation}} --- migrations (tables, indexes, RLS, seed
-        categories + demo product), typed Supabase clients (server/browser), admin auth
-        (\texttt{/admin/login}, guarded layout, sign-out).
-  \item \textbf{\texttt{feat/products-public}} --- \texttt{/products} grid +
-        \texttt{/products/[slug]} detail from real data, SEO, order-form CTA hookup, empty
-        states.
-  \item \textbf{\texttt{feat/products-admin}} --- CRUD editor, draft/preview/publish, drag
-        reorder, categories manager, image uploads, revalidation.
+  \item \textbf{\texttt{feat/products-schema}} --- migration 0003 (transform live schema:
+        categories, lifecycle/status/tech renames, new columns, junction, RLS updates, role
+        trigger, indexes, \texttt{sort\_order} backfill); typed query/view-model updates so
+        the current UX keeps rendering unchanged.
+  \item \textbf{\texttt{feat/products-public}} --- two-tier UX: grid + Quick View
+        (\texttt{?p=} pushState deep links) + technical page with related posts, CTA rules,
+        SEO + sitemap, order-form CTA, empty states; public tier components prop-driven
+        (preview-ready).
+  \item \textbf{\texttt{feat/products-admin}} --- tiered CRUD editor with publish validation
+        (incl.\ published-edit revalidation), draft/preview/publish, drag reorder
+        (\texttt{@dnd-kit}), categories manager, related-posts picker, duplicate action,
+        image uploads, revalidation.
 \end{enumerate}
 
 Each PR ships the full green bar (typecheck, lint, tests, build) + screenshots before merge.
