@@ -1,0 +1,268 @@
+\documentclass[11pt,a4paper]{article}
+
+% ---------- packages ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+% ---------- brand colours ----------
+\definecolor{ink}{HTML}{0A0A0B}
+\definecolor{navy}{HTML}{1E2A44}
+\definecolor{slate}{HTML}{2D3A5C}
+\definecolor{silver}{HTML}{8A93A6}
+\definecolor{indigo}{HTML}{5C7CFA}
+\definecolor{lightgray}{HTML}{F2F3F5}
+\definecolor{codebg}{HTML}{F5F6F8}
+
+\graphicspath{{../../../brand/}}
+
+% ---------- hyperref ----------
+\hypersetup{
+  pdftitle={NurvexThink -- Products Experience Design Spec},
+  pdfauthor={NurvexThink},
+  colorlinks=true, linkcolor=navy, urlcolor=slate, citecolor=navy
+}
+
+% ---------- headings ----------
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{slate}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.6em}
+
+% ---------- header / footer ----------
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\lhead{\small\color{slate}NurvexThink}
+\rhead{\small\color{slate}Products Experience Design Spec}
+\cfoot{\small\color{slate}\thepage}
+
+% ---------- code listings ----------
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{silver},
+  breaklines=true, columns=fullflexible,
+  xleftmargin=0.5em, framexleftmargin=0.5em,
+  showstringspaces=false
+}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\setlist{itemsep=2pt, topsep=3pt}
+
+% ---------- title page ----------
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+\colorbox{ink}{%
+  \begin{minipage}[c][6cm][c]{0.92\textwidth}
+    \centering
+    \includegraphics[width=4cm]{NurvexThink_logo.jpeg}\\[0.6cm]
+    {\Huge\bfseries\color{white} NurvexThink}\\[0.2cm]
+    {\large\color{silver} Software, built and published.}
+  \end{minipage}%
+}
+
+\vspace{1.6cm}
+{\Large\bfseries\color{navy} Products Experience --- Design Specification}\\[0.4cm]
+{\large\color{slate} Public showcase + flexible admin: content AND presentation control}
+
+\vfill
+\begin{tabular}{rl}
+\textbf{Date:} & 2026-07-04\\
+\textbf{Status:} & Approved (design phase)\\
+\textbf{Owner:} & Fatima Abdul Raheem (CEO)\\
+\textbf{Depth decision:} & Content + presentation control\\
+\end{tabular}
+\vspace{1.5cm}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ===================================================================
+\section{Overview}
+Build the \textbf{products experience} for the NurvexThink main site: a public product
+showcase (grid + real per-product detail pages) driven end-to-end by a flexible admin. The
+admin controls both \textbf{what} shows (content, media) and \textbf{how} it's arranged
+(order, pinning, categories, publish state) --- with drafts and preview, so nothing goes
+live by accident.
+
+\subsection{Why this shape (from the 2026-07-03 admin-flexibility research)}
+We reviewed a reference admin (Fatima's portfolio) end-to-end. Its strengths --- every admin
+field labeled with its public destination; instant content propagation --- are adopted here.
+Its gaps define our differentiators:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{Y Y}
+\toprule
+\textbf{Reference gap} & \textbf{Our answer}\\
+\midrule
+No ordering/pinning & \texttt{sort\_order} + drag-to-reorder; featured pinning\\
+Everything live on save & Draft $\rightarrow$ Published workflow + preview\\
+Hardcoded category dropdown & Admin-managed categories table\\
+No detail pages / SEO & \texttt{/products/[slug]} pages with per-product SEO\\
+No live preview & Preview renders the real public page from draft data\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Goals}
+\begin{itemize}
+  \item Public showcase that sells: filterable grid + rich detail pages linking to live apps.
+  \item Admin can reshape the grid (order, featured, categories) without a deploy.
+  \item Safe publishing: draft/preview/publish; nothing accidental.
+  \item Foundation (schema, RLS, auth) reusable by blog + orders later.
+\end{itemize}
+
+\subsection{Non-goals (deferred)}
+\begin{itemize}
+  \item Blog admin \& orders inbox (separate specs; this builds their foundation).
+  \item Payments, client accounts.
+  \item Full site-builder (home hero/stats editing from admin) --- revisit after products ship.
+\end{itemize}
+
+% ===================================================================
+\section{Public UX}
+\subsection{\texttt{/products} --- showcase grid}
+\begin{itemize}
+  \item Card: cover image, name, summary, category pill, up to $\sim$4 tech chips, Featured badge.
+  \item Filter pills from the categories table (+ ``All''); empty categories hidden.
+  \item Order: \texttt{featured DESC, sort\_order ASC} --- exactly what the admin arranged.
+  \item Server Component; data via the Supabase server client; \texttt{revalidatePath} on
+        admin mutations keeps it fresh without polling.
+\end{itemize}
+
+\subsection{\texttt{/products/[slug]} --- detail page}
+\begin{itemize}
+  \item Hero: cover image, name, one-line summary, category, CTA row (\textbf{Open live app},
+        \textbf{View repo} when set).
+  \item Body: long description (Markdown rendered), tech stack chips, gallery grid, and a
+        \textbf{``Request something like this''} CTA linking to \texttt{/order?ref=<slug>}.
+  \item SEO: \texttt{generateMetadata} from \texttt{seo\_description} (fallback: summary) +
+        OG image (\texttt{og\_image} fallback: cover). Published products only; drafts 404
+        publicly.
+\end{itemize}
+
+% ===================================================================
+\section{Admin UX (\texttt{/admin/products})}
+\begin{itemize}
+  \item \textbf{List view:} cover thumb, name, category, status badge (Draft/Published),
+        Featured star, \textbf{drag-to-reorder} (persists \texttt{sort\_order}); filter by
+        status/category.
+  \item \textbf{Editor:} every field labeled with its public destination --- e.g.\ ``Summary
+        \emph{(product card)}'', ``Long description \emph{(detail page)}'', ``SEO description
+        \emph{(search results)}''. Fields: name, slug (auto from name, editable), summary,
+        long description (Markdown), category select, tech list, cover image upload, gallery
+        uploads, live URL, repo URL, featured toggle, SEO description, OG image. Buttons:
+        \textbf{Save draft} \(\cdot\) \textbf{Preview} \(\cdot\) \textbf{Publish} (and
+        Unpublish on published items).
+  \item \textbf{Preview:} admin-only route rendering the \emph{actual} public detail-page
+        component from draft data (\texttt{/admin/products/[id]/preview}).
+  \item \textbf{Categories manager:} add / rename / delete / reorder. Delete blocked while
+        products reference the category (reassign first).
+  \item Uploads go to the \texttt{product-images} Storage bucket (public read, admin write).
+\end{itemize}
+
+% ===================================================================
+\section{Data model (Supabase)}
+\subsection{\texttt{product\_categories} (new)}
+\texttt{id uuid PK} \(\cdot\) \texttt{name text} \(\cdot\) \texttt{slug text unique}
+\(\cdot\) \texttt{sort\_order int} \(\cdot\) \texttt{created\_at}
+
+\subsection{\texttt{products} (revised from the 2026-06-30 site spec)}
+\texttt{id uuid PK} \(\cdot\) \texttt{slug text unique} \(\cdot\) \texttt{name text}
+\(\cdot\) \texttt{summary text} \(\cdot\) \texttt{description text} (Markdown) \(\cdot\)
+\texttt{cover\_image text} \(\cdot\) \texttt{gallery text[]} \(\cdot\)
+\texttt{category\_id uuid FK} (nullable) \(\cdot\) \texttt{tech text[]} \(\cdot\)
+\texttt{live\_url text} \(\cdot\) \texttt{repo\_url text} \(\cdot\)
+\texttt{featured bool default false} \(\cdot\) \texttt{sort\_order int default 0} \(\cdot\)
+\texttt{status text check in ('draft','published') default 'draft'} (replaces the earlier
+\texttt{published bool}) \(\cdot\) \texttt{seo\_description text} \(\cdot\)
+\texttt{og\_image text} \(\cdot\) \texttt{published\_at timestamptz} \(\cdot\)
+\texttt{created\_at} \(\cdot\) \texttt{updated\_at}
+
+\subsection{\texttt{profiles} (from the site spec, built here)}
+\texttt{id uuid PK = auth.users.id} \(\cdot\) \texttt{email} \(\cdot\) \texttt{full\_name}
+\(\cdot\) \texttt{role text check in ('owner','admin')} \(\cdot\) \texttt{created\_at}
+
+\subsection{Indexes}
+\texttt{products(status)}, \texttt{products(featured)}, \texttt{products(category\_id)},
+\texttt{products(sort\_order)}, \texttt{products(slug)},
+\texttt{product\_categories(slug)}, \texttt{profiles(role)} --- every column an RLS policy
+or common filter touches.
+
+\subsection{RLS (default-deny, enabled on every table)}
+\begin{itemize}
+  \item \texttt{products}: public SELECT where \texttt{status = 'published'}; admins (via
+        \texttt{profiles.role in ('owner','admin')}) full access.
+  \item \texttt{product\_categories}: public SELECT; admins full access.
+  \item \texttt{profiles}: user reads own row; admins read all; only owners change roles.
+  \item Storage \texttt{product-images}: public read; write restricted to authenticated admins.
+\end{itemize}
+
+Migrations are SQL files committed under \texttt{supabase/migrations/} and applied to
+project \texttt{axbsghyqhhdaiylcksbv} via the Supabase SQL editor or CLI.
+
+% ===================================================================
+\section{Auth \& guarding}
+\begin{itemize}
+  \item Supabase Auth email/password for the three admin accounts.
+  \item \texttt{/admin/login} public; all other \texttt{/admin/*} routes guarded server-side
+        (\texttt{@supabase/ssr} session + \texttt{profiles.role} check in the admin layout).
+  \item \texttt{service\_role} key never leaves the server; mutations run through Server
+        Actions that re-verify the admin session.
+\end{itemize}
+
+% ===================================================================
+\section{Performance}
+\begin{itemize}
+  \item Server Components throughout; the admin's interactive pieces (drag list, editor
+        form, uploads) are client leaves.
+  \item Public pages cached; admin mutations call \texttt{revalidatePath('/products')}
+        (+ the detail path), so publishing is instant without polling.
+  \item \texttt{next/image} everywhere; drag-and-drop via native HTML5 DnD (no new
+        dependency unless it proves insufficient --- then \texttt{@dnd-kit}).
+\end{itemize}
+
+% ===================================================================
+\section{Testing}
+\begin{itemize}
+  \item Unit: slug generation, ordering logic, status transitions, category-delete guard.
+  \item Component: product card, grid filtering, editor field$\rightarrow$destination labels.
+  \item RLS: impersonation checklist (anon sees only published; admin sees all; anon writes
+        fail).
+  \item Manual: draft $\rightarrow$ preview $\rightarrow$ publish $\rightarrow$ appears
+        publicly; reorder reflects on \texttt{/products}; unpublish 404s the detail page.
+\end{itemize}
+
+% ===================================================================
+\section{Build order (three PRs)}
+\begin{enumerate}
+  \item \textbf{\texttt{feat/backend-foundation}} --- migrations (tables, indexes, RLS, seed
+        categories + demo product), typed Supabase clients (server/browser), admin auth
+        (\texttt{/admin/login}, guarded layout, sign-out).
+  \item \textbf{\texttt{feat/products-public}} --- \texttt{/products} grid +
+        \texttt{/products/[slug]} detail from real data, SEO, order-form CTA hookup, empty
+        states.
+  \item \textbf{\texttt{feat/products-admin}} --- CRUD editor, draft/preview/publish, drag
+        reorder, categories manager, image uploads, revalidation.
+\end{enumerate}
+
+Each PR ships the full green bar (typecheck, lint, tests, build) + screenshots before merge.
+
+\end{document}
