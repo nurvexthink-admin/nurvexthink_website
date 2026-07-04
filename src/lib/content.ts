@@ -5,6 +5,13 @@
  * the view-model shapes those queries return.
  */
 
+export type Social = {
+  /** Must match a SocialName in components/social-icons.tsx */
+  label: "GitHub" | "Instagram" | "X" | "YouTube" | "TikTok";
+  handle: string;
+  href: string;
+};
+
 export const siteConfig = {
   name: "NurvexThink",
   tagline: "Software, built and published.",
@@ -13,10 +20,24 @@ export const siteConfig = {
   email: "nurvexthink@gmail.com",
   founded: "2026",
   socials: [
-    { label: "GitHub", href: "https://github.com/nurvexthink" },
-    { label: "X", href: "#" },
-    { label: "LinkedIn", href: "#" },
-  ],
+    { label: "GitHub", handle: "nurvexthink", href: "https://github.com/nurvexthink" },
+    {
+      label: "Instagram",
+      handle: "@nurvexthink",
+      href: "https://www.instagram.com/nurvexthink/",
+    },
+    { label: "X", handle: "@nurvexthink", href: "https://x.com/nurvexthink" },
+    {
+      label: "YouTube",
+      handle: "NurvexThink",
+      href: "https://www.youtube.com/channel/UCUttTw2GdvnD8XkaFqTbARQ",
+    },
+    {
+      label: "TikTok",
+      handle: "@nurvexthink8",
+      href: "https://www.tiktok.com/@nurvexthink8",
+    },
+  ] satisfies Social[],
 };
 
 export type Stat = { value: string; label: string };
