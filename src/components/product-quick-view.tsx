@@ -79,9 +79,9 @@ export function ProductQuickView({
                 </li>
               ))}
             </ul>
-          ) : (
+          ) : product.summary && product.summary !== product.tagline ? (
             <p className="text-muted-foreground text-sm">{product.summary}</p>
-          )}
+          ) : null}
 
           <div className="flex flex-col gap-2.5 pt-1 sm:flex-row">
             {cta.kind === "live" ? (
