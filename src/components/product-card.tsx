@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import Image from "next/image";
+import { Sparkles } from "lucide-react";
 import type { Product } from "@/lib/content";
 import { cn } from "@/lib/utils";
 
@@ -9,41 +9,73 @@ const STATUS_STYLES: Record<Product["status"], string> = {
   Soon: "bg-muted text-muted-foreground ring-border",
 };
 
-export function ProductCard({ product }: { product: Product }) {
+/**
+ * A real link to the technical page; when `onOpen` is provided the click is
+ * intercepted to open the Quick View instead (crawlers/no-JS still navigate).
+ */
+export function ProductCard({
+  product,
+  onOpen,
+}: {
+  product: Product;
+  onOpen?: (slug: string) => void;
+}) {
   return (
-    <Link
+    <a
       href={`/products/${product.slug}`}
-      className="group border-border bg-card hover:border-primary/40 relative flex flex-col gap-4 rounded-2xl border p-6 transition-colors"
+      onClick={
+        onOpen
+          ? (e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+              e.preventDefault();
+              onOpen(product.slug);
+            }
+          : undefined
+      }
+      className="group border-border bg-card hover:border-primary/40 relative flex flex-col overflow-hidden rounded-2xl border transition-colors"
     >
-      <div className="flex items-center justify-between">
-        <span className="text-muted-foreground font-mono text-xs tracking-[0.18em] uppercase">
-          {product.category}
-        </span>
-        <span
-          className={cn(
-            "rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset",
-            STATUS_STYLES[product.status],
-          )}
-        >
-          {product.status}
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h3 className="font-heading flex items-center gap-1.5 text-xl font-semibold tracking-tight">
-          {product.name}
-          <ArrowUpRight className="text-muted-foreground group-hover:text-primary size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-        </h3>
-        <p className="text-muted-foreground text-sm">{product.summary}</p>
-      </div>
-
-      <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
-        {product.tags.map((tag) => (
-          <span key={tag} className="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs">
-            {tag}
+      <div className="bg-muted relative aspect-[16/9] w-full overflow-hidden">
+        {product.coverImage ? (
+          <Image
+            src={product.coverImage}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div
+            aria-hidden
+            className="from-brand-navy/40 to-brand-indigo/15 absolute inset-0 bg-gradient-to-br"
+          />
+        )}
+        {product.featured ? (
+          <span className="bg-background/80 text-primary absolute top-3 left-3 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium backdrop-blur">
+            <Sparkles className="size-3" />
+            Featured
           </span>
-        ))}
+        ) : null}
       </div>
-    </Link>
+
+      <div className="flex flex-1 flex-col gap-3 p-6">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground font-mono text-xs tracking-[0.18em] uppercase">
+            {product.category}
+          </span>
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset",
+              STATUS_STYLES[product.status],
+            )}
+          >
+            {product.status}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <h3 className="font-heading text-xl font-semibold tracking-tight">{product.name}</h3>
+          <p className="text-muted-foreground text-sm">{product.tagline}</p>
+        </div>
+      </div>
+    </a>
   );
 }
