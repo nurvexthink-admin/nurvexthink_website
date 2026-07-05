@@ -69,13 +69,6 @@ export async function getProductFullAdmin(id: string): Promise<AdminProductFull 
   return (data as unknown as AdminProductFull | null) ?? null;
 }
 
-// Legacy — removed in Task 2 when the edit page switches to getProductFullAdmin.
-export async function getProductAdmin(id: string): Promise<ProductRow | null> {
-  const supabase = await createServerSupabaseClient();
-  const { data } = await supabase.from("products").select("*").eq("id", id).maybeSingle();
-  return data ?? null;
-}
-
 export async function listCategoriesAdmin(): Promise<ProductCategoryRow[]> {
   const supabase = await createServerSupabaseClient();
   const { data } = await supabase

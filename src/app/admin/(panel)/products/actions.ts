@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   validatePublishTier,
@@ -384,67 +383,9 @@ export async function deleteProduct(formData: FormData) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Legacy form actions — kept so product-form.tsx and the current list page
-// compile until their replacements land. parseForm/ProductFormState/create/
-// update are removed in Task 2; toggleProductPublished in Task 3 (it bypasses
-// publish validation, which spec §3 forbids — the new list has no toggle).
+// Legacy — toggleProductPublished is removed in Task 3 with the list rewrite
+// (it bypasses publish validation, which spec §3 forbids).
 // ─────────────────────────────────────────────────────────────────────────────
-
-export type ProductFormState = { error?: string };
-
-function parseForm(formData: FormData) {
-  const tech = String(formData.get("tech") ?? "")
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
-  const lifecycleRaw = String(formData.get("lifecycle") ?? "live").toLowerCase();
-  const published = formData.get("published") === "on";
-  const existingPublishedAt =
-    String(formData.get("existing_published_at") ?? "").trim() || null;
-  return {
-    slug: String(formData.get("slug") ?? "")
-      .trim()
-      .toLowerCase(),
-    name: String(formData.get("name") ?? "").trim(),
-    summary: String(formData.get("summary") ?? "").trim() || null,
-    description: String(formData.get("description") ?? "").trim() || null,
-    live_url: String(formData.get("live_url") ?? "").trim() || null,
-    year: String(formData.get("year") ?? "").trim() || null,
-    lifecycle: (["live", "beta", "soon"].includes(lifecycleRaw) ? lifecycleRaw : "live") as
-      "live" | "beta" | "soon",
-    tech,
-    featured: formData.get("featured") === "on",
-    status: (published ? "published" : "draft") as "draft" | "published",
-    published_at: published ? (existingPublishedAt ?? new Date().toISOString()) : existingPublishedAt,
-  };
-}
-
-export async function createProduct(
-  _prev: ProductFormState,
-  formData: FormData,
-): Promise<ProductFormState> {
-  const values = parseForm(formData);
-  if (!values.name || !values.slug) return { error: "Name and slug are required." };
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from("products").insert(values);
-  if (error) return { error: error.message };
-  revalidateProductPaths([values.slug]);
-  redirect("/admin/products");
-}
-
-export async function updateProduct(
-  id: string,
-  _prev: ProductFormState,
-  formData: FormData,
-): Promise<ProductFormState> {
-  const values = parseForm(formData);
-  if (!values.name || !values.slug) return { error: "Name and slug are required." };
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from("products").update(values).eq("id", id);
-  if (error) return { error: error.message };
-  revalidateProductPaths([values.slug]);
-  redirect("/admin/products");
-}
 
 export async function toggleProductPublished(formData: FormData) {
   const id = String(formData.get("id") ?? "");

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { ProductForm } from "@/components/admin/product-form";
-import { createProduct } from "../actions";
+import { ProductEditor } from "@/components/admin/product-editor";
+import { listCategoriesAdmin, listPostsForPicker } from "@/lib/admin-queries";
 
 export const dynamic = "force-dynamic";
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  const [categories, posts] = await Promise.all([listCategoriesAdmin(), listPostsForPicker()]);
+
   return (
     <div className="flex flex-col gap-6">
       <Link
@@ -16,7 +18,7 @@ export default function NewProductPage() {
         Products
       </Link>
       <h1 className="font-heading text-2xl font-bold tracking-tight">New product</h1>
-      <ProductForm action={createProduct} submitLabel="Create product" />
+      <ProductEditor product={null} categories={categories} posts={posts} />
     </div>
   );
 }
