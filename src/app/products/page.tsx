@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/section-heading";
-import { ProductCard } from "@/components/product-card";
+import { ProductsExplorer } from "@/components/products-explorer";
 import { getProducts } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Products",
   description: "Software NurvexThink designs, builds, and ships — explore the catalog.",
+  alternates: { canonical: "/products" },
 };
 
 export default async function ProductsPage() {
@@ -23,8 +25,8 @@ export default async function ProductsPage() {
             <Eyebrow>Catalog</Eyebrow>
             <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-5xl">Products</h1>
             <p className="text-muted-foreground text-lg text-pretty">
-              Software we build, run, and keep improving. Some are live today, others are on the way
-              — each one shaped by what we learned shipping the last.
+              Software we build, run, and keep improving. Click any product for the short story —
+              or go straight to the technical details.
             </p>
           </div>
         </Container>
@@ -35,11 +37,9 @@ export default async function ProductsPage() {
           {products.length === 0 ? (
             <p className="text-muted-foreground">No products published yet — check back soon.</p>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map((product) => (
-                <ProductCard key={product.slug} product={product} />
-              ))}
-            </div>
+            <Suspense fallback={null}>
+              <ProductsExplorer products={products} />
+            </Suspense>
           )}
         </Container>
       </section>
