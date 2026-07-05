@@ -1,5 +1,37 @@
--- NurvexThink — 0005: sample features + product↔blog links so the new
--- public sections are visible with real content. Idempotent.
+-- NurvexThink — 0005: quick-view content (taglines + highlights), sample
+-- features, and product↔blog links so the new public sections are visible
+-- with real content. Idempotent.
+
+-- Quick-view tier: a short tagline + plain-language highlights per product.
+update public.products p
+set tagline = v.tagline, highlights = v.highlights
+from (values
+  ($s$fluxboard$s$, $s$Standups in, shipped work out.$s$,
+   array[$s$Plan and assign without touching the mouse$s$,
+         $s$Everyone sees the same board, instantly$s$,
+         $s$Built for small teams that move fast$s$]),
+  ($s$pulse$s$, $s$See what people actually did.$s$,
+   array[$s$Build a funnel in seconds — no SQL$s$,
+         $s$No cookies, so no cookie banner$s$,
+         $s$A weekly digest of what changed$s$]),
+  ($s$ledger$s$, $s$From project to paid, in two clicks.$s$,
+   array[$s$Invoices that send themselves$s$,
+         $s$Polite automatic payment reminders$s$,
+         $s$Exports your accountant will love$s$]),
+  ($s$draft$s$, $s$An AI writing desk with your voice.$s$,
+   array[$s$Learns how you write, not how robots write$s$,
+         $s$Outlines, rewrites, and tone control$s$,
+         $s$You stay in the driver's seat$s$]),
+  ($s$shipgate$s$, $s$A live preview for every change.$s$,
+   array[$s$Every branch gets a clickable link$s$,
+         $s$Checks run before anyone reviews$s$,
+         $s$Reviewers see the real thing, not screenshots$s$]),
+  ($s$vault$s$, $s$Share sensitive files without holding your breath.$s$,
+   array[$s$End-to-end encrypted, always$s$,
+         $s$Links that expire when you say so$s$,
+         $s$Revoke access instantly$s$])
+) as v(slug, tagline, highlights)
+where p.slug = v.slug;
 
 -- FluxBoard features
 insert into public.product_features (product_id, title, description, sort_order)
