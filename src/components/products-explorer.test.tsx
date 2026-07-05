@@ -68,13 +68,18 @@ describe("ProductsExplorer", () => {
     expect(String(push.mock.calls[0][2])).toContain("p=fluxboard");
   });
 
-  it("hydrates open state from ?p= and ignores unknown slugs", () => {
+  it("hydrates open state from ?p=", () => {
     params.value = new URLSearchParams("p=pulse");
     render(<ProductsExplorer products={products} />);
     expect(screen.getByText("Full technical details")).toBeInTheDocument();
+  });
 
+  it("silently ignores an unknown ?p= slug", () => {
     params.value = new URLSearchParams("p=not-a-product");
     render(<ProductsExplorer products={products} />);
+    expect(screen.queryByText("Full technical details")).not.toBeInTheDocument();
+    // The grid still renders normally.
+    expect(screen.getByText("FluxBoard")).toBeInTheDocument();
   });
 
   it("filters by category pill", () => {
