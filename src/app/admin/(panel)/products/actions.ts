@@ -155,9 +155,14 @@ export async function saveProductFull(
     productId = data.id;
   }
 
-  // Replace features (delete + insert: tiny volumes, trivial ordering writes).
-  const delFeatures = await supabase.from("product_features").delete().eq("product_id", productId);
-  if (delFeatures.error) return { ok: false, missing: [], error: delFeatures.error.message };
+  // Replace features: insert the new rows FIRST — product_features has UUID
+  // PKs and no unique constraint on (product_id, title), so freshly-generated
+  // ids never collide with the old rows — and capture the ids the DB hands
+  // back, THEN delete whatever old row isn't one of them. Supabase JS has no
+  // client-side transactions, so a delete-then-insert would lose the existing
+  // features forever if the insert failed after the delete committed (a
+  // transient error the admin would otherwise just see as a generic message).
+  // Insert-first means an insert error always leaves the old rows untouched.
   const featureRows = payload.features
     .map((f) => ({
       title: f.title.trim(),
@@ -166,22 +171,67 @@ export async function saveProductFull(
     }))
     .filter((f) => f.title)
     .map((f, i) => ({ ...f, product_id: productId, sort_order: (i + 1) * 10 }));
+
+  let newFeatureIds: string[] = [];
   if (featureRows.length > 0) {
-    const { error } = await supabase.from("product_features").insert(featureRows);
+    const { data, error } = await supabase
+      .from("product_features")
+      .insert(featureRows)
+      .select("id");
     if (error) return { ok: false, missing: [], error: error.message };
+    newFeatureIds = (data ?? []).map((row) => row.id);
+  }
+  const delFeatures =
+    newFeatureIds.length > 0
+      ? await supabase
+          .from("product_features")
+          .delete()
+          .eq("product_id", productId)
+          .not("id", "in", `(${newFeatureIds.join(",")})`)
+      : await supabase.from("product_features").delete().eq("product_id", productId);
+  if (delFeatures.error) {
+    // The new rows are already saved and visible — only the stale ones
+    // failed to clear, so this is a recoverable duplicate, not data loss.
+    return {
+      ok: false,
+      missing: [],
+      error: "Features were saved but old entries could not be cleaned up — reload and save again.",
+    };
   }
 
-  // Replace related-post links.
-  const delLinks = await supabase.from("product_blog_links").delete().eq("product_id", productId);
-  if (delLinks.error) return { ok: false, missing: [], error: delLinks.error.message };
-  if (payload.relatedPostIds.length > 0) {
-    const linkRows = payload.relatedPostIds.map((postId, i) => ({
+  // Replace related-post links: upsert the new set FIRST — product_blog_links'
+  // PK is (product_id, blog_post_id), so this updates sort_order for pairs
+  // that are kept and inserts pairs that are new, without ever touching a row
+  // it shouldn't — THEN delete whatever pair isn't in the new set. Same
+  // rationale as features above: an upsert error leaves the old link set
+  // completely intact instead of vanishing if it failed after a delete
+  // committed.
+  const relatedPostIds = payload.relatedPostIds;
+  if (relatedPostIds.length > 0) {
+    const linkRows = relatedPostIds.map((postId, i) => ({
       product_id: productId,
       blog_post_id: postId,
       sort_order: (i + 1) * 10,
     }));
-    const { error } = await supabase.from("product_blog_links").insert(linkRows);
+    const { error } = await supabase
+      .from("product_blog_links")
+      .upsert(linkRows, { onConflict: "product_id,blog_post_id" });
     if (error) return { ok: false, missing: [], error: error.message };
+  }
+  const delLinks =
+    relatedPostIds.length > 0
+      ? await supabase
+          .from("product_blog_links")
+          .delete()
+          .eq("product_id", productId)
+          .not("blog_post_id", "in", `(${relatedPostIds.join(",")})`)
+      : await supabase.from("product_blog_links").delete().eq("product_id", productId);
+  if (delLinks.error) {
+    return {
+      ok: false,
+      missing: [],
+      error: "Links were saved but old entries could not be cleaned up — reload and save again.",
+    };
   }
 
   revalidateProductPaths([fields.slug, current && current.slug !== fields.slug ? current.slug : null]);
@@ -192,6 +242,7 @@ export async function saveProductFull(
 // reorderProducts — persists the admin drag order as sort_order 10, 20, 30 …
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Assumes orderedIds is the complete id set (the drag list is never filtered).
 export async function reorderProducts(orderedIds: string[]): Promise<MutationResult> {
   const supabase = await createServerSupabaseClient();
   const orders = sortOrderSequence(orderedIds.length);

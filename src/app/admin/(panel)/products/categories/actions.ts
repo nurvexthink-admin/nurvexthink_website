@@ -75,6 +75,7 @@ export async function deleteCategory(id: string): Promise<CategoryActionResult> 
   return { ok: true, error: null };
 }
 
+// Assumes orderedIds is the complete id set (the drag list is never filtered).
 export async function reorderCategories(orderedIds: string[]): Promise<CategoryActionResult> {
   const supabase = await createServerSupabaseClient();
   const orders = sortOrderSequence(orderedIds.length);
