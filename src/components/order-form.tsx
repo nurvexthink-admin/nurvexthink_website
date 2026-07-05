@@ -27,7 +27,7 @@ function SubmitButton() {
   );
 }
 
-export function OrderForm() {
+export function OrderForm({ defaultDetails = "" }: { defaultDetails?: string }) {
   const [state, formAction] = useActionState(submitOrder, initialState);
 
   if (state.status === "success") {
@@ -117,6 +117,7 @@ export function OrderForm() {
           name="details"
           required
           rows={5}
+          defaultValue={defaultDetails}
           placeholder="A sentence or two about the problem, who it's for, and any deadline."
           className={cn(fieldClass, "resize-y")}
         />

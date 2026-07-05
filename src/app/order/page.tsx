@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Eyebrow } from "@/components/section-heading";
 import { OrderForm } from "@/components/order-form";
+import { getProductBySlug } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Start a project",
@@ -17,7 +18,15 @@ const expectations = [
   "You own everything we build for you",
 ];
 
-export default function OrderPage() {
+export default async function OrderPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>;
+}) {
+  const { ref } = await searchParams;
+  const refProduct = ref ? await getProductBySlug(ref) : null;
+  const defaultDetails = refProduct ? `I'd like something like ${refProduct.name} — ` : "";
+
   return (
     <section className="relative overflow-hidden py-16 sm:py-24">
       <div aria-hidden className="bg-grid mask-fade-y absolute inset-0" />
@@ -43,7 +52,7 @@ export default function OrderPage() {
           </ul>
         </div>
 
-        <OrderForm />
+        <OrderForm defaultDetails={defaultDetails} />
       </Container>
     </section>
   );
