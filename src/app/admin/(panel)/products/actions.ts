@@ -381,27 +381,3 @@ export async function deleteProduct(formData: FormData) {
   await supabase.from("products").delete().eq("id", id);
   revalidateProductPaths([row?.slug]);
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Legacy — toggleProductPublished is removed in Task 3 with the list rewrite
-// (it bypasses publish validation, which spec §3 forbids).
-// ─────────────────────────────────────────────────────────────────────────────
-
-export async function toggleProductPublished(formData: FormData) {
-  const id = String(formData.get("id") ?? "");
-  const next = formData.get("current") !== "true";
-  const supabase = await createServerSupabaseClient();
-  const { data: row } = await supabase
-    .from("products")
-    .select("published_at")
-    .eq("id", id)
-    .maybeSingle();
-  await supabase
-    .from("products")
-    .update({
-      status: next ? "published" : "draft",
-      published_at: next ? (row?.published_at ?? new Date().toISOString()) : row?.published_at,
-    })
-    .eq("id", id);
-  revalidateProductPaths();
-}
