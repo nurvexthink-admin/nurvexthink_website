@@ -427,7 +427,7 @@ export function ProductEditor({
                       </button>
                     </div>
                     <label className={labelClass}>
-                      Title
+                      Title <span className={hintClass}>(feature block heading)</span>
                       <input
                         value={f.title}
                         onChange={(e) =>

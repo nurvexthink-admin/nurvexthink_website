@@ -147,7 +147,20 @@ export async function saveProductFull(
     if (error) return { ok: false, missing: [], error: error.message };
     productId = id;
   } else {
-    const { data, error } = await supabase.from("products").insert(record).select("id").single();
+    // New products go to the end of the (unfeatured) list — same end-of-list
+    // placement duplicateProduct uses, so freshly created rows don't jump the
+    // queue. Edits of existing products must never touch sort_order.
+    const { data: maxRow } = await supabase
+      .from("products")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const { data, error } = await supabase
+      .from("products")
+      .insert({ ...record, sort_order: nextSortOrder(maxRow ? [maxRow.sort_order] : []) })
+      .select("id")
+      .single();
     if (error || !data) {
       return { ok: false, missing: [], error: error?.message ?? "Insert failed." };
     }
@@ -194,7 +207,8 @@ export async function saveProductFull(
     return {
       ok: false,
       missing: [],
-      error: "Features were saved but old entries could not be cleaned up — reload and save again.",
+      error:
+        "Feature changes were applied but old entries could not be cleaned up — reload and save again.",
     };
   }
 

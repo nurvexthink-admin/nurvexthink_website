@@ -137,6 +137,7 @@ export function CategoriesManager({ categories }: { categories: CategoryWithCoun
                       onClick={() => {
                         if (window.confirm(`Delete "${c.name}"?`)) run(() => deleteCategory(c.id));
                       }}
+                      aria-label={`Delete ${c.name}`}
                       className="text-muted-foreground hover:text-destructive shrink-0 p-1.5 transition-colors disabled:opacity-40"
                     >
                       <Trash2 className="size-4" />
