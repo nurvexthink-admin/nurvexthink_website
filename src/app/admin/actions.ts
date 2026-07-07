@@ -20,5 +20,6 @@ export async function signInAction(_prev: AuthState, formData: FormData): Promis
 export async function signOutAction() {
   const supabase = await createServerSupabaseClient();
   await supabase.auth.signOut();
-  redirect("/admin/login");
+  // Home, not the login page — signing out shouldn't reveal the secret gate URL.
+  redirect("/");
 }

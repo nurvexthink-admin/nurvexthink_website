@@ -18,7 +18,8 @@ export default async function AdminPanelLayout({ children }: { children: React.R
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
+  // Backstop for the middleware guard: never expose the panel to the unauthenticated.
+  if (!user) redirect("/");
 
   return (
     <div className="min-h-[70vh]">

@@ -98,7 +98,14 @@ Detailed rules live in `.claude/skills/nurvexthink-nextjs-perf` and
 NEXT_PUBLIC_SUPABASE_URL=https://axbsghyqhhdaiylcksbv.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=    # public-safe; copy from Supabase > Project Settings > API
 SUPABASE_SERVICE_ROLE_KEY=        # server-side ONLY; never commit; set in Vercel/Actions secrets
+ADMIN_SLUG=                       # secret admin-login path segment; login is at /<ADMIN_SLUG>; server-only; if unset the login 404s
 ```
+
+> **Admin login is hidden.** There is no public link to it. The login page lives at the
+> secret path `/<ADMIN_SLUG>` (env-gated in `src/app/[gate]/`); `/admin/login` no longer
+> exists and unauthenticated `/admin/*` requests bounce to the homepage. The authenticated
+> panel still uses `/admin/*`. Obscurity is defence-in-depth only — the real protection is
+> Supabase Auth + RLS + a strong admin password.
 
 ## Where things live
 
