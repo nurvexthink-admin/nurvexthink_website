@@ -63,12 +63,6 @@ export function Footer() {
             © {year} {siteConfig.name}. All rights reserved.
           </p>
           <div className="flex items-center gap-5">
-            <Link
-              href="/admin"
-              className="hover:text-foreground font-mono text-xs transition-colors"
-            >
-              Admin
-            </Link>
             <p className="font-mono text-xs">{siteConfig.tagline}</p>
           </div>
         </div>

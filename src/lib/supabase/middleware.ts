@@ -32,17 +32,14 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isLogin = pathname === "/admin/login";
 
-  if (!user && pathname.startsWith("/admin") && !isLogin) {
+  // The login form no longer lives under /admin — it's at the secret gate
+  // (/<ADMIN_SLUG>). So the panel is authenticated-only: unauthenticated hits
+  // bounce to the homepage rather than revealing a login form anywhere.
+  if (!user && pathname.startsWith("/admin")) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/admin/login";
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  if (user && isLogin) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/admin";
+    redirectUrl.pathname = "/";
+    redirectUrl.search = "";
     return NextResponse.redirect(redirectUrl);
   }
 
