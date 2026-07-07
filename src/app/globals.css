@@ -355,4 +355,13 @@ body:has(dialog[open]) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+
+  /* The social marquee is a deliberate, always-on brand element (owner decision).
+     Its `.marquee-track` selector outranks the `*` reset above, so it keeps
+     scrolling regardless of the OS/browser reduced-motion setting. Still pauses
+     on hover, so it never traps a reader. */
+  .marquee-track {
+    animation-duration: 32s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
