@@ -56,3 +56,25 @@ export function nextSortOrder(existing: number[]): number {
 export function sortOrderSequence(count: number): number[] {
   return Array.from({ length: count }, (_, i) => (i + 1) * 10);
 }
+
+/**
+ * A link that's safe to render as an href — must be an absolute http(s) URL.
+ * Blocks `javascript:`, `data:`, and other schemes that could execute on click.
+ * Empty is treated safe (the field is optional; callers coerce it to null).
+ */
+export function isSafeHttpUrl(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/** Returns the URL if it's a safe http(s) link, else null (drops it). */
+export function safeHttpUrlOrNull(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed && isSafeHttpUrl(trimmed) ? trimmed : null;
+}

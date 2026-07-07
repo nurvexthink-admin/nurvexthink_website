@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { submitOrder, type OrderState } from "@/app/order/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/content";
 
@@ -122,6 +123,8 @@ export function OrderForm({ defaultDetails = "" }: { defaultDetails?: string }) 
           className={cn(fieldClass, "resize-y")}
         />
       </label>
+
+      <TurnstileWidget />
 
       <SubmitButton />
     </form>

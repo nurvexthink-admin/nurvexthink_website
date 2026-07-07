@@ -9,6 +9,7 @@ import {
   copySlug,
   nextSortOrder,
   sortOrderSequence,
+  safeHttpUrlOrNull,
 } from "@/lib/product-admin";
 
 const SESSION_EXPIRED_ERROR = "Your session has expired — sign in again.";
@@ -91,8 +92,9 @@ function sanitize(payload: ProductPayload) {
     tech: payload.tech.map((t) => t.trim()).filter(Boolean),
     lifecycle: LIFECYCLES.includes(payload.lifecycle) ? payload.lifecycle : "live",
     year: payload.year.trim() || null,
-    live_url: payload.liveUrl.trim() || null,
-    repo_url: payload.repoUrl.trim() || null,
+    // Only store safe http(s) links; a javascript:/data: URL is dropped.
+    live_url: safeHttpUrlOrNull(payload.liveUrl),
+    repo_url: safeHttpUrlOrNull(payload.repoUrl),
     seo_description: payload.seoDescription.trim() || null,
     og_image: payload.ogImage || null,
     featured: payload.featured,
@@ -401,6 +403,13 @@ export async function duplicateProduct(id: string): Promise<MutationResult> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/avif",
+  "image/gif",
+];
 
 export async function uploadProductImage(formData: FormData): Promise<UploadResult> {
   const supabase = await createServerSupabaseClient();
@@ -411,8 +420,10 @@ export async function uploadProductImage(formData: FormData): Promise<UploadResu
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, error: "Choose a file first." };
   }
-  if (!file.type.startsWith("image/")) {
-    return { ok: false, error: "Only image files can be uploaded." };
+  // Allow-list raster formats only. SVG is excluded on purpose: it can carry
+  // scripts and is served from the public storage domain.
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return { ok: false, error: "Upload a PNG, JPEG, WebP, AVIF, or GIF image." };
   }
   if (file.size > MAX_UPLOAD_BYTES) {
     return { ok: false, error: "Images must be 5MB or smaller." };

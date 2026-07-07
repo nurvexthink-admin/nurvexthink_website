@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import type { ProductDetail } from "@/lib/content";
 import { productCta } from "@/lib/product-cta";
+import { isSafeHttpUrl } from "@/lib/product-admin";
 import { Container } from "@/components/ui/container";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -84,7 +85,7 @@ export function ProductDetailView({ detail }: { detail: ProductDetail }) {
                 Coming soon
               </span>
             )}
-            {detail.repoUrl ? (
+            {detail.repoUrl && isSafeHttpUrl(detail.repoUrl) ? (
               <a
                 href={detail.repoUrl}
                 target="_blank"

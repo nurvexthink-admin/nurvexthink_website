@@ -148,6 +148,12 @@ export type Database = {
         Update: Partial<OrderRow>;
         Relationships: [];
       };
+      order_rate_limit: {
+        Row: { ip_hash: string; created_at: string };
+        Insert: { ip_hash: string; created_at?: string };
+        Update: Partial<{ ip_hash: string; created_at: string }>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

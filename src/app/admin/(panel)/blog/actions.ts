@@ -6,6 +6,17 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type PostFormState = { error?: string };
 
+const SESSION_EXPIRED = "Your session has expired — sign in again.";
+
+/** Defence-in-depth: confirm a live admin session before any write (RLS still
+ *  enforces this too). */
+async function currentUser(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
+
 function parseForm(formData: FormData) {
   const status = String(formData.get("status") ?? "draft") === "published" ? "published" : "draft";
   const existing = String(formData.get("existing_published_at") ?? "").trim() || null;
@@ -35,6 +46,7 @@ export async function createPost(_prev: PostFormState, formData: FormData): Prom
   const values = parseForm(formData);
   if (!values.title || !values.slug) return { error: "Title and slug are required." };
   const supabase = await createServerSupabaseClient();
+  if (!(await currentUser(supabase))) return { error: SESSION_EXPIRED };
   const { error } = await supabase.from("blog_posts").insert(values);
   if (error) return { error: error.message };
   revalidateAll(values.slug);
@@ -49,6 +61,7 @@ export async function updatePost(
   const values = parseForm(formData);
   if (!values.title || !values.slug) return { error: "Title and slug are required." };
   const supabase = await createServerSupabaseClient();
+  if (!(await currentUser(supabase))) return { error: SESSION_EXPIRED };
   const { error } = await supabase.from("blog_posts").update(values).eq("id", id);
   if (error) return { error: error.message };
   revalidateAll(values.slug);
@@ -58,6 +71,7 @@ export async function updatePost(
 export async function deletePost(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const supabase = await createServerSupabaseClient();
+  if (!(await currentUser(supabase))) redirect("/");
   await supabase.from("blog_posts").delete().eq("id", id);
   revalidateAll();
 }

@@ -5,7 +5,35 @@ import {
   copySlug,
   nextSortOrder,
   sortOrderSequence,
+  isSafeHttpUrl,
+  safeHttpUrlOrNull,
 } from "@/lib/product-admin";
+
+describe("isSafeHttpUrl", () => {
+  it("accepts http and https absolute URLs", () => {
+    expect(isSafeHttpUrl("https://example.com")).toBe(true);
+    expect(isSafeHttpUrl("http://example.com/path")).toBe(true);
+  });
+  it("treats empty as safe (optional field)", () => {
+    expect(isSafeHttpUrl("")).toBe(true);
+    expect(isSafeHttpUrl("   ")).toBe(true);
+  });
+  it("rejects javascript:, data:, and other schemes", () => {
+    expect(isSafeHttpUrl("javascript:alert(1)")).toBe(false);
+    expect(isSafeHttpUrl("data:text/html,<script>alert(1)</script>")).toBe(false);
+    expect(isSafeHttpUrl("mailto:a@b.com")).toBe(false);
+    expect(isSafeHttpUrl("not a url")).toBe(false);
+  });
+});
+
+describe("safeHttpUrlOrNull", () => {
+  it("returns the URL when safe, null otherwise", () => {
+    expect(safeHttpUrlOrNull("https://x.app")).toBe("https://x.app");
+    expect(safeHttpUrlOrNull("  https://x.app  ")).toBe("https://x.app");
+    expect(safeHttpUrlOrNull("")).toBeNull();
+    expect(safeHttpUrlOrNull("javascript:alert(1)")).toBeNull();
+  });
+});
 
 const complete = {
   name: "FluxBoard",
