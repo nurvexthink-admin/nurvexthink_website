@@ -104,7 +104,7 @@ export default function AboutPage() {
       {/* Team */}
       <section className="py-20 sm:py-28">
         <Container className="flex flex-col gap-12">
-          <SectionHeading eyebrow="The team" title="The people behind NurvexThink" />
+          <SectionHeading eyebrow="The team" title="The person behind NurvexThink" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {team.map((member) => (
               <div

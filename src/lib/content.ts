@@ -7,7 +7,7 @@
 
 export type Social = {
   /** Must match a SocialName in components/social-icons.tsx */
-  label: "GitHub" | "Instagram" | "X" | "YouTube" | "TikTok";
+  label: "GitHub" | "LinkedIn" | "Instagram" | "X" | "YouTube" | "TikTok";
   handle: string;
   href: string;
 };
@@ -21,6 +21,11 @@ export const siteConfig = {
   founded: "2026",
   socials: [
     { label: "GitHub", handle: "nurvexthink", href: "https://github.com/nurvexthink" },
+    {
+      label: "LinkedIn",
+      handle: "nurvexthink",
+      href: "https://www.linkedin.com/company/nurvexthink/",
+    },
     {
       label: "Instagram",
       handle: "@nurvexthink",
@@ -184,18 +189,6 @@ export const team: TeamMember[] = [
     role: "Chief Executive Officer",
     bio: "Sets the product direction and makes sure the things we ship are worth shipping.",
     initials: "FA",
-  },
-  {
-    name: "Muhammad Ali",
-    role: "Chief Financial Officer",
-    bio: "Runs operations and the numbers so the building never has to stop.",
-    initials: "MA",
-  },
-  {
-    name: "Join the studio",
-    role: "We're hiring",
-    bio: "We're a small team that ships a lot. If that sounds like you, we'd love to talk.",
-    initials: "+",
   },
 ];
 

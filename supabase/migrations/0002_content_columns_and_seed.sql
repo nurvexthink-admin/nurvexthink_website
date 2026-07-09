@@ -71,7 +71,7 @@ So the catalog isn't a side project. It's our research lab, our portfolio, and o
 
   ($s$a-preview-link-from-day-one$s$, $s$A preview link from day one$s$, $s$Engineering$s$,
    $s$The single practice that removes the most risk from a software project: making the work visible before it's done.$s$,
-   $s$6 min$s$, $s$Muhammad Ali$s$, $s$published$s$, $s$2026-06-05$s$,
+   $s$6 min$s$, $s$Fatima Abdul Raheem$s$, $s$published$s$, $s$2026-06-05$s$,
    $c$The riskiest moment in any software project is the big reveal — weeks of work shown for the first time at the end, when changing direction is expensive. We remove that risk with one habit: a live preview link from the first day.
 
 From day one, every change is deployed somewhere you can click. You don't read a status report; you use the product as it grows. Misunderstandings surface in hours, not at launch, and feedback lands while it's still cheap to act on.
@@ -89,7 +89,7 @@ This site is built that way. The navy-and-silver of our logo carries through bot
 
   ($s$scaling-to-zero-with-supabase$s$, $s$Scaling to zero with Supabase$s$, $s$Infrastructure$s$,
    $s$How we run real products on a budget that starts at nothing — and only grows when the users do.$s$,
-   $s$7 min$s$, $s$Muhammad Ali$s$, $s$published$s$, $s$2026-05-09$s$,
+   $s$7 min$s$, $s$Fatima Abdul Raheem$s$, $s$published$s$, $s$2026-05-09$s$,
    $c$A new product shouldn't cost money before it has users. We build so that an idle app costs almost nothing and only grows its bill when real people show up — which is exactly when you can afford it.
 
 Supabase is a big part of how we do that: a managed Postgres database, authentication, file storage, and serverless functions on a free tier that's generous enough to launch on. No servers to babysit, no fixed monthly floor to justify before launch.
