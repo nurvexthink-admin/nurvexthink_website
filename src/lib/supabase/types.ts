@@ -27,6 +27,8 @@ export type ProductRow = {
   seo_description: string | null;
   og_image: string | null;
   published_at: string | null;
+  /** When false, the AI chatbot must not see or recommend this product (0009). */
+  include_in_chatbot: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -69,6 +71,64 @@ export type BlogPostRow = {
   status: "draft" | "published";
   published_at: string | null;
   created_at: string;
+  updated_at: string;
+};
+
+/**
+ * Chatbot configuration — a single pinned row (id = 1). Holds the system prompt,
+ * so it is admin-only at the RLS level and must never be sent to the browser.
+ */
+export type ChatbotSettingsRow = {
+  id: 1;
+  enabled: boolean;
+  model: string;
+  temperature: number;
+  max_output_tokens: number;
+  system_prompt: string;
+  persona: string;
+  greeting: string;
+  suggested_questions: string[];
+  rate_limit_max: number;
+  rate_limit_window_min: number;
+  max_history_messages: number;
+  updated_at: string;
+};
+
+/** One editable block of company knowledge fed to the chatbot. */
+export type CompanyInfoRow = {
+  id: string;
+  section_key: string;
+  title: string;
+  content: string;
+  sort_order: number;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatConversationRow = {
+  id: string;
+  session_id: string;
+  ip_hash: string | null;
+  message_count: number;
+  created_at: string;
+  last_message_at: string;
+};
+
+export type ChatMessageRow = {
+  id: string;
+  conversation_id: string;
+  role: "user" | "assistant";
+  content: string;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  created_at: string;
+};
+
+/** Admin-editable recipients for the internal "new lead" alert (singleton, id = 1). */
+export type NotificationSettingsRow = {
+  id: 1;
+  lead_recipients: string[];
   updated_at: string;
 };
 
@@ -152,6 +212,46 @@ export type Database = {
         Row: { ip_hash: string; created_at: string };
         Insert: { ip_hash: string; created_at?: string };
         Update: Partial<{ ip_hash: string; created_at: string }>;
+        Relationships: [];
+      };
+      chatbot_settings: {
+        Row: ChatbotSettingsRow;
+        Insert: Partial<ChatbotSettingsRow> & { id?: 1 };
+        Update: Partial<ChatbotSettingsRow>;
+        Relationships: [];
+      };
+      company_info: {
+        Row: CompanyInfoRow;
+        Insert: { section_key: string; title: string } & Partial<
+          Omit<CompanyInfoRow, "section_key" | "title">
+        >;
+        Update: Partial<CompanyInfoRow>;
+        Relationships: [];
+      };
+      chat_conversations: {
+        Row: ChatConversationRow;
+        Insert: { session_id: string } & Partial<Omit<ChatConversationRow, "session_id">>;
+        Update: Partial<ChatConversationRow>;
+        Relationships: [];
+      };
+      chat_messages: {
+        Row: ChatMessageRow;
+        Insert: { conversation_id: string; role: ChatMessageRow["role"]; content: string } & Partial<
+          Omit<ChatMessageRow, "conversation_id" | "role" | "content">
+        >;
+        Update: Partial<ChatMessageRow>;
+        Relationships: [];
+      };
+      chat_rate_limit: {
+        Row: { ip_hash: string; created_at: string };
+        Insert: { ip_hash: string; created_at?: string };
+        Update: Partial<{ ip_hash: string; created_at: string }>;
+        Relationships: [];
+      };
+      notification_settings: {
+        Row: NotificationSettingsRow;
+        Insert: Partial<NotificationSettingsRow> & { id?: 1 };
+        Update: Partial<NotificationSettingsRow>;
         Relationships: [];
       };
     };

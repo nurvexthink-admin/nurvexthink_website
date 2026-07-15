@@ -20,9 +20,18 @@ function Brand({ onClick }: { onClick?: () => void }) {
   );
 }
 
-export function Navbar() {
+/**
+ * `chatEnabled` comes from the server (the admin's on/off switch). While the bot
+ * is off the /chat page 404s, so the tab must not exist — showing a link to a
+ * dead page is worse than showing no link.
+ */
+export function Navbar({ chatEnabled = false }: { chatEnabled?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+
+  const links = chatEnabled
+    ? [...NAV_LINKS, { href: "/chat", label: "AI Assistant" }]
+    : NAV_LINKS;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -44,7 +53,7 @@ export function Navbar() {
         <Brand />
 
         <ul className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
@@ -79,7 +88,7 @@ export function Navbar() {
       {open ? (
         <div className="border-border bg-background/95 border-t backdrop-blur md:hidden">
           <ul className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}

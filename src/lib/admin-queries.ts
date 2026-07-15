@@ -126,6 +126,26 @@ export async function listOrdersAdmin(): Promise<OrderRow[]> {
   return data ?? [];
 }
 
+/**
+ * Recipients of the "new lead" alert, for the admin editor.
+ * Returns null when the table has not been migrated yet, so the UI can prompt to
+ * apply migration 0010 instead of showing an empty editor.
+ */
+export async function getLeadRecipientsAdmin(): Promise<string[] | null> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("notification_settings")
+      .select("lead_recipients")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error) return null;
+    return (data?.lead_recipients as string[] | undefined) ?? [];
+  } catch {
+    return null;
+  }
+}
+
 export async function adminCounts() {
   const supabase = await createServerSupabaseClient();
   const [products, posts, orders, newOrders] = await Promise.all([

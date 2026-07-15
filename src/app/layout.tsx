@@ -7,6 +7,8 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AmbientBackground } from "@/components/ambient-background";
+import { ChatMount } from "@/components/chat/chat-mount";
+import { getPublicChatSettings } from "@/lib/chatbot/context";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -44,7 +46,11 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "NurvexThink" },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // One cached read per request (see getPublicChatSettings) — the navbar tab and
+  // the floating widget both depend on the same on/off switch.
+  const chat = await getPublicChatSettings();
+
   return (
     <html
       lang="en"
@@ -59,9 +65,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           disableTransitionOnChange
         >
           <AmbientBackground />
-          <Navbar />
+          <Navbar chatEnabled={chat.enabled} />
           <main className="flex-1">{children}</main>
           <Footer />
+          {/* Renders nothing at all while the chatbot is switched off in /admin/chatbot. */}
+          <ChatMount />
         </ThemeProvider>
       </body>
     </html>

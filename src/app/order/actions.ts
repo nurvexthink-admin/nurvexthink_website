@@ -1,9 +1,11 @@
 "use server";
 
 import { createHash } from "node:crypto";
+import { after } from "next/server";
 import { headers } from "next/headers";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { sendOrderEmails } from "@/lib/email/send-order-emails";
 
 export type OrderState =
   { status: "idle" } | { status: "success" } | { status: "error"; message: string };
@@ -113,6 +115,20 @@ export async function submitOrder(_prev: OrderState, formData: FormData): Promis
         message: "We couldn't save your request just now. Please email us instead.",
       };
     }
+
+    // The lead is safely saved — that is the only thing the customer's success
+    // depends on. Notifications go out AFTER the response via after(), so a slow
+    // or failing mail server never delays the confirmation or loses the lead.
+    // The try/catch is belt-and-braces: sendOrderEmails is already internally
+    // safe, but nothing in an after() callback may become an unhandled rejection.
+    after(async () => {
+      try {
+        await sendOrderEmails({ name, email, company, projectType, budget, details });
+      } catch (err) {
+        console.error("[order] sendOrderEmails threw unexpectedly:", err);
+      }
+    });
+
     return { status: "success" };
   } catch {
     // Thrown when the service-role env var isn't set (e.g. local dev without it).

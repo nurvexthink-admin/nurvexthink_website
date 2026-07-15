@@ -1,5 +1,6 @@
-import { listOrdersAdmin } from "@/lib/admin-queries";
+import { listOrdersAdmin, getLeadRecipientsAdmin } from "@/lib/admin-queries";
 import { StatusSelect } from "@/components/admin/status-select";
+import { LeadRecipientsEditor } from "@/components/admin/lead-recipients";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ function formatDate(iso: string) {
 }
 
 export default async function AdminOrdersPage() {
-  const orders = await listOrdersAdmin();
+  const [orders, recipients] = await Promise.all([listOrdersAdmin(), getLeadRecipientsAdmin()]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -22,6 +23,8 @@ export default async function AdminOrdersPage() {
           {orders.length} project {orders.length === 1 ? "request" : "requests"} from the order form
         </p>
       </div>
+
+      <LeadRecipientsEditor initial={recipients} />
 
       {orders.length === 0 ? (
         <p className="border-border bg-card text-muted-foreground rounded-2xl border p-8 text-sm">
